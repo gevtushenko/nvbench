@@ -20,6 +20,7 @@
 
 #include <nvbench/detail/transform_reduce.cuh>
 
+#include <algorithm>
 #include <functional>
 #include <limits>
 #include <numeric>
@@ -60,6 +61,53 @@ compute_noise(const std::vector<nvbench::float64_t> &data,
   const auto abs_stdev = std::sqrt(variance);
   const auto rel_stdev = abs_stdev / mean;
   return rel_stdev * 100.;
+}
+
+// `data` must be sorted.
+inline std::vector<nvbench::float64_t>
+compute_percentiles(const std::vector<nvbench::float64_t> &data,
+                    const std::vector<int> &percentiles)
+{
+  std::vector<nvbench::float64_t> results;
+  results.reserve(percentiles.size());
+
+  for (int p : percentiles)
+  {
+    p = std::clamp(p, 0, 100);
+
+    const auto idx = (p == 100) ? (data.size() - 1) : (p * data.size() / 100);
+    results.push_back(data[idx]);
+  }
+
+  return results;
+}
+
+// `data` must be sorted.
+// Returns bins + 2 entries. The first and last entry are the number of samples
+// below and above the histogram range.
+inline std::vector<nvbench::int64_t>
+compute_histogram(const std::vector<nvbench::float64_t> &data,
+                  nvbench::float64_t min,
+                  nvbench::float64_t stride,
+                  std::size_t bins)
+{
+  std::vector<nvbench::int64_t> histo;
+  histo.reserve(bins + 2);
+
+  const auto first = data.cbegin();
+  const auto last  = data.cend();
+  auto iter        = first;
+
+  for (std::size_t i = 0; i < bins + 1; ++i)
+  {
+    const auto level = min + stride * static_cast<nvbench::float64_t>(i);
+    auto prev        = iter;
+    iter             = std::lower_bound(iter, last, level);
+    histo.push_back(static_cast<nvbench::int64_t>(std::distance(prev, iter)));
+  }
+  histo.push_back(static_cast<nvbench::int64_t>(std::distance(iter, last)));
+
+  return histo;
 }
 
 } // namespace nvbench::detail

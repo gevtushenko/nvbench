@@ -24,9 +24,12 @@
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
+#include <nvbench/detail/statistics.cuh>
+
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cstdio>
 #include <stdexcept>
 #include <variant>
@@ -114,6 +117,59 @@ void measure_cold_base::generate_summaries()
                     "Relative standard deviation of the cold GPU execution "
                     "time measurements.");
     summ.set_float64("value", m_cuda_noise);
+  }
+
+  if (!m_cuda_times.empty())
+  { // Percentiles and histogram:
+    const auto percentiles = std::vector<int>{0, 1, 25, 50, 75, 99, 100};
+    std::sort(m_cuda_times.begin(), m_cuda_times.end());
+    const auto results = nvbench::detail::compute_percentiles(m_cuda_times,
+                                                              percentiles);
+
+    const auto histo_min    = results[1]; // 1st percentile
+    const auto histo_max    = results[5]; // 99th percentile
+    const auto histo_bins   = std::size_t{50};
+    const auto histo_stride = (histo_max - histo_min) /
+                              static_cast<double>(histo_bins);
+
+    const auto histo = nvbench::detail::compute_histogram(m_cuda_times,
+                                                          histo_min,
+                                                          histo_stride,
+                                                          histo_bins);
+    {
+      auto &summ = m_state.add_summary("GPU Time Percentiles (Cold)");
+      summ.set_string("hide", "Non-standard format.");
+      summ.set_string("hint", "percentiles");
+      assert(percentiles.size() == results.size());
+      for (std::size_t i = 0; i < results.size(); ++i)
+      {
+        fmt::print("Percentile {:<3}: {}\n", percentiles[i], results[i]);
+        summ.set_float64(fmt::format("{}", percentiles[i]), results[i]);
+      }
+    }
+
+    {
+      auto &summ = m_state.add_summary("GPU Time Histogram (Cold)");
+      summ.set_string("hide", "Non-standard format.");
+      summ.set_string("hint", "histogram");
+      summ.set_float64("min", histo_min);
+      summ.set_float64("stride", histo_stride);
+      summ.set_int64("bins", static_cast<nvbench::int64_t>(histo_bins));
+      assert(histo.size() == histo_bins + 2);
+      const auto scale =
+        std::reduce(histo.cbegin(), histo.cend(), 0, [](auto a, auto b) {
+          return a > b ? a : b;
+        });
+      for (std::size_t i = 0; i < histo_bins + 2; ++i)
+      {
+        fmt::print("Bin {:<2}: {:5} |{:0>{}}\n",
+                   i,
+                   histo[i],
+                   "|",
+                   (histo[i] * 50) / scale);
+        summ.set_int64(fmt::format("bin {}", i), histo[i]);
+      }
+    }
   }
 
   if (const auto items = m_state.get_element_count(); items != 0)
