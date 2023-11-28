@@ -5,6 +5,7 @@ set(test_srcs
   cuda_timer.cu
   cpu_timer.cu
   enum_type_list.cu
+  entropy_criterion.cu
   float64_axis.cu
   int64_axis.cu
   named_values.cu
@@ -13,7 +14,9 @@ set(test_srcs
   ring_buffer.cu
   runner.cu
   state.cu
+  statistics.cu
   state_generator.cu
+  stdrel_criterion.cu
   string_axis.cu
   type_axis.cu
   type_list.cu
