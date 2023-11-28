@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <utility>
 #include <vector>
+#include "nvbench/types.cuh"
 
 namespace nvbench
 {
@@ -44,6 +45,16 @@ struct state;
 
 namespace detail
 {
+
+class entropy_tracker
+{
+  std::vector<nvbench::float64_t> m_entropy{};
+
+public:
+  void clear();
+  void update(const std::vector<nvbench::float64_t> &samples);
+  bool is_finished() const;
+};
 
 // non-templated code goes here:
 struct measure_cold_base
@@ -104,6 +115,7 @@ protected:
 
   // Trailing history of noise measurements for convergence tests
   nvbench::detail::ring_buffer<nvbench::float64_t> m_noise_tracker{512};
+  entropy_tracker m_entropy_tracker{};
 
   std::vector<nvbench::float64_t> m_cuda_times;
   std::vector<nvbench::float64_t> m_cpu_times;

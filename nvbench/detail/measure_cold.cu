@@ -18,6 +18,8 @@
 
 #include <nvbench/detail/measure_cold.cuh>
 
+#include <iostream>
+
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/printer_base.cuh>
@@ -27,6 +29,7 @@
 #include <nvbench/detail/ring_buffer.cuh>
 #include <nvbench/detail/throw.cuh>
 
+#include "nvbench/types.cuh"
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -69,6 +72,7 @@ void measure_cold_base::initialize()
   m_cpu_noise       = 0.;
   m_total_samples   = 0;
   m_noise_tracker.clear();
+  m_entropy_tracker.clear();
   m_cuda_times.clear();
   m_cpu_times.clear();
   m_max_time_exceeded = false;
@@ -76,12 +80,92 @@ void measure_cold_base::initialize()
 
 void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
 
+static double compute_actual_entropy(const std::vector<nvbench::float64_t> &in)
+{
+  const int n = static_cast<int>(in.size());
+
+  std::vector<nvbench::float64_t> h_in(in.begin(), in.end());
+  std::sort(h_in.begin(), h_in.end());
+  std::vector<int> h_counts;
+  nvbench::float64_t prev = h_in[0];
+  int length = 1;
+
+  for (std::size_t i = 1; i < h_in.size(); i++)
+  {
+    const nvbench::float64_t next = h_in[i];
+    if (next == prev)
+    {
+      length++;
+    }
+    else
+    {
+      h_counts.push_back(length);
+      prev = next;
+      length = 1;
+    }
+  }
+  h_counts.push_back(length);
+
+  std::vector<int> h_num_runs(1, static_cast<int>(h_counts.size()));
+
+  // normalize counts
+  std::vector<nvbench::float64_t> ps(h_num_runs[0]);
+  for (std::size_t i = 0; i < ps.size(); i++)
+  {
+    ps[i] = static_cast<nvbench::float64_t>(h_counts[i]) / n;
+  }
+
+  nvbench::float64_t entropy = 0.0;
+
+  if (ps.size())
+  {
+    for (nvbench::float64_t p : ps)
+    {
+      entropy -= p * std::log2(p);
+    }
+  }
+
+  return entropy;
+}
+
+void entropy_tracker::clear()
+{
+  m_entropy.clear();
+}
+
+void entropy_tracker::update(const std::vector<nvbench::float64_t> &samples)
+{
+  // TODO Optimize
+  if (samples.size() % 10 == 0) 
+  {
+    m_entropy.push_back(compute_actual_entropy(samples));
+  }
+}
+
+bool entropy_tracker::is_finished() const 
+{
+  if (m_entropy.size() < 2)
+  {
+    return false;
+  }
+
+  // relative difference between last two entropy values should be less than 0.1%
+  const auto rel_diff = std::abs(m_entropy.back() - m_entropy[m_entropy.size() - 2]) / m_entropy.back();
+  if (rel_diff < 0.001)
+  {
+    return true;
+  }
+
+  return false;
+}
+
 void measure_cold_base::record_measurements()
 {
   // Update and record timers and counters:
   const auto cur_cuda_time = m_cuda_timer.get_duration();
   const auto cur_cpu_time  = m_cpu_timer.get_duration();
   m_cuda_times.push_back(cur_cuda_time);
+  m_entropy_tracker.update(m_cuda_times);
   m_cpu_times.push_back(cur_cpu_time);
   m_total_cuda_time += cur_cuda_time;
   m_total_cpu_time += cur_cpu_time;
@@ -101,6 +185,8 @@ void measure_cold_base::record_measurements()
 
 bool measure_cold_base::is_finished()
 {
+  static std::size_t entropy_converged_at = 0;
+
   if (m_run_once)
   {
     return true;
@@ -112,7 +198,15 @@ bool measure_cold_base::is_finished()
     // Noise has dropped below threshold
     if (m_noise_tracker.back() < m_max_noise)
     {
+      std::cout << "entropy converged at " << entropy_converged_at << " samples" << std::endl;
+      std::cout << "noise converged at " << m_cuda_times.size() << " samples" << std::endl;
+      entropy_converged_at = 0;
       return true;
+    }
+
+    if (entropy_converged_at == 0 && m_entropy_tracker.is_finished())
+    {
+      entropy_converged_at = m_cuda_times.size();
     }
 
     // Check if the noise (cuda rel stdev) has converged by inspecting a
@@ -137,6 +231,9 @@ bool measure_cold_base::is_finished()
       const auto noise_threshold = 0.05;
       if (noise_rel_stdev < noise_threshold)
       {
+        std::cout << "entropy converged at " << entropy_converged_at << " samples" << std::endl;
+        std::cout << "noise converged at " << m_cuda_times.size() << " samples" << std::endl;
+        entropy_converged_at = 0;
         return true;
       }
     }
