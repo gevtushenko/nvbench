@@ -31,8 +31,7 @@
 
 #include <algorithm>
 #include <cstdio>
-#include <stdexcept>
-#include <variant>
+#include <numeric>
 
 namespace nvbench::detail
 {
@@ -68,13 +67,39 @@ void measure_cold_base::initialize()
   m_total_cpu_time  = 0.;
   m_cpu_noise       = 0.;
   m_total_samples   = 0;
-  m_noise_tracker.clear();
+  m_noise_tracker   = std::numeric_limits<nvbench::float64_t>::infinity();
+  m_entropy_tracker.clear();
   m_cuda_times.clear();
+  m_freq_tracker.clear();
   m_cpu_times.clear();
   m_max_time_exceeded = false;
 }
 
 void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
+
+double measure_cold_base::compute_entropy() 
+{
+  const std::size_t n = m_freq_tracker.size();
+  if (n == 0)
+  {
+    return 0.0;
+  }
+
+  m_ps.resize(n);
+  for (std::size_t i = 0; i < n; i++)
+  {
+    m_ps[i] = static_cast<nvbench::float64_t>(m_freq_tracker[i].second) /
+              static_cast<nvbench::float64_t>(m_total_samples);
+  }
+
+  nvbench::float64_t entropy{};
+  for (nvbench::float64_t p : m_ps)
+  {
+    entropy -= p * std::log2(p);
+  }
+
+  return entropy;
+}
 
 void measure_cold_base::record_measurements()
 {
@@ -82,20 +107,43 @@ void measure_cold_base::record_measurements()
   const auto cur_cuda_time = m_cuda_timer.get_duration();
   const auto cur_cpu_time  = m_cpu_timer.get_duration();
   m_cuda_times.push_back(cur_cuda_time);
+
+  {
+    auto it = std::lower_bound(m_freq_tracker.begin(),
+                               m_freq_tracker.end(),
+                               std::make_pair(cur_cuda_time, nvbench::int64_t{}));
+
+    if (it != m_freq_tracker.end() && it->first == cur_cuda_time)
+    {
+      it->second += 1;
+    }
+    else
+    {
+      m_freq_tracker.insert(it, std::make_pair(cur_cuda_time, nvbench::int64_t{1}));
+    }
+  }
+
   m_cpu_times.push_back(cur_cpu_time);
   m_total_cuda_time += cur_cuda_time;
   m_total_cpu_time += cur_cpu_time;
   ++m_total_samples;
 
-  // Compute convergence statistics using CUDA timings:
-  const auto mean_cuda_time = m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples);
-  const auto cuda_stdev     = nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
-                                                                          m_cuda_times.cend(),
-                                                                          mean_cuda_time);
-  auto cuda_rel_stdev       = cuda_stdev / mean_cuda_time;
-  if (std::isfinite(cuda_rel_stdev))
+  if (m_total_samples % m_entropy_check_threshold == 0)
   {
-    m_noise_tracker.push_back(cuda_rel_stdev);
+    m_entropy_tracker.push_back(compute_entropy());
+
+    const auto mean_entropy =
+      std::accumulate(m_entropy_tracker.cbegin(), m_entropy_tracker.cend(), 0.) /
+      static_cast<nvbench::float64_t>(m_entropy_tracker.size());
+    const auto entropy_stdev =
+      nvbench::detail::statistics::standard_deviation(m_entropy_tracker.cbegin(),
+                                                      m_entropy_tracker.cend(),
+                                                      mean_entropy);
+    const auto entropy_rel_stdev = entropy_stdev / mean_entropy;
+    if (std::isfinite(entropy_stdev))
+    {
+      m_noise_tracker = entropy_rel_stdev;
+    }
   }
 }
 
@@ -109,33 +157,10 @@ bool measure_cold_base::is_finished()
   // Check that we've gathered enough samples:
   if (m_total_cuda_time > m_min_time && m_total_samples > m_min_samples)
   {
-    // Noise has dropped below threshold
-    if (m_noise_tracker.back() < m_max_noise)
+    if (m_total_samples % m_entropy_check_threshold == 0)
     {
-      return true;
-    }
-
-    // Check if the noise (cuda rel stdev) has converged by inspecting a
-    // trailing window of recorded noise measurements.
-    // This helps identify benchmarks that are inherently noisy and would
-    // never converge to the target stdev threshold. This check ensures that the
-    // benchmark will end if the stdev stabilizes above the target threshold.
-    // Gather some iterations before checking noise, and limit how often we
-    // check this.
-    if (m_noise_tracker.size() > 64 && (m_total_samples % 16 == 0))
-    {
-      // Use the current noise as the stdev reference.
-      const auto current_noise = m_noise_tracker.back();
-      const auto noise_stdev =
-        nvbench::detail::statistics::standard_deviation(m_noise_tracker.cbegin(),
-                                                        m_noise_tracker.cend(),
-                                                        current_noise);
-      const auto noise_rel_stdev = noise_stdev / current_noise;
-
-      // If the rel stdev of the last N cuda noise measurements is less than
-      // 5%, consider the result stable.
-      const auto noise_threshold = 0.05;
-      if (noise_rel_stdev < noise_threshold)
+      // Noise has dropped below threshold
+      if (m_noise_tracker < m_max_noise)
       {
         return true;
       }
@@ -211,9 +236,7 @@ void measure_cold_base::generate_summaries()
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description", "Relative standard deviation of isolated GPU times");
-    summ.set_float64("value",
-                     m_noise_tracker.empty() ? std::numeric_limits<nvbench::float64_t>::infinity()
-                                             : m_noise_tracker.back());
+    summ.set_float64("value", m_noise_tracker);
   }
 
   if (const auto items = m_state.get_element_count(); items != 0)
@@ -270,14 +293,14 @@ void measure_cold_base::generate_summaries()
     {
       const auto timeout = m_walltime_timer.get_duration();
 
-      if (!m_noise_tracker.empty() && m_noise_tracker.back() > m_max_noise)
+      if (m_noise_tracker > m_max_noise)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
                                 "while over noise threshold ({:0.2f}% > "
                                 "{:0.2f}%)",
                                 timeout,
-                                m_noise_tracker.back() * 100,
+                                m_noise_tracker * 100,
                                 m_max_noise * 100));
       }
       if (m_total_samples < m_min_samples)

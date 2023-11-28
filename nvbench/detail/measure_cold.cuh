@@ -33,7 +33,7 @@
 
 #include <cuda_runtime.h>
 
-#include <algorithm>
+#include <limits>
 #include <utility>
 #include <vector>
 
@@ -75,6 +75,7 @@ protected:
     NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
   }
 
+  double compute_entropy();
   void block_stream();
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
 
@@ -102,8 +103,15 @@ protected:
   nvbench::float64_t m_total_cpu_time{};
   nvbench::float64_t m_cpu_noise{}; // rel stdev
 
-  // Trailing history of noise measurements for convergence tests
-  nvbench::detail::ring_buffer<nvbench::float64_t> m_noise_tracker{512};
+  // Check entropy every m_entropy_check_threshold samples
+  static constexpr nvbench::uint64_t m_entropy_check_threshold{4};
+
+  std::vector<std::pair<nvbench::float64_t, nvbench::int64_t>> m_freq_tracker;
+  std::vector<nvbench::float64_t> m_ps;
+
+  // Trailing history of entropy measurements for convergence tests
+  nvbench::detail::ring_buffer<nvbench::float64_t> m_entropy_tracker{32};
+  nvbench::float64_t m_noise_tracker{std::numeric_limits<nvbench::float64_t>::infinity()};
 
   std::vector<nvbench::float64_t> m_cuda_times;
   std::vector<nvbench::float64_t> m_cpu_times;
