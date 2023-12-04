@@ -46,7 +46,14 @@ measure_cold_base::measure_cold_base(state &exec_state)
     , m_min_time{exec_state.get_min_time()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
-{}
+{
+  if (m_min_samples > 0)
+  {
+    m_cuda_times.reserve(m_min_samples);
+    m_freq_tracker.reserve(m_min_samples);
+    m_cpu_times.reserve(m_min_samples);
+  }
+}
 
 void measure_cold_base::check()
 {
