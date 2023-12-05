@@ -27,6 +27,7 @@
 #include <nvbench/detail/ring_buffer.cuh>
 #include <nvbench/detail/throw.cuh>
 
+#include "nvbench/types.cuh"
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -116,17 +117,28 @@ void measure_cold_base::record_measurements()
   m_cuda_times.push_back(cur_cuda_time);
 
   {
+    auto key = cur_cuda_time;
+    constexpr bool bin_keys = true;
+
+    if (bin_keys) 
+    {
+      const auto resolution_us = 0.5;
+      const auto resulution_s = resolution_us / 1'000'000;
+      const auto epsilon = resulution_s * 2;
+      key = std::round(key / epsilon) * epsilon;
+    }
+
     auto it = std::lower_bound(m_freq_tracker.begin(),
                                m_freq_tracker.end(),
-                               std::make_pair(cur_cuda_time, nvbench::int64_t{}));
+                               std::make_pair(key, nvbench::int64_t{}));
 
-    if (it != m_freq_tracker.end() && it->first == cur_cuda_time)
+    if (it != m_freq_tracker.end() && it->first == key)
     {
       it->second += 1;
     }
     else
     {
-      m_freq_tracker.insert(it, std::make_pair(cur_cuda_time, nvbench::int64_t{1}));
+      m_freq_tracker.insert(it, std::make_pair(key, nvbench::int64_t{1}));
     }
   }
 
