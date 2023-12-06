@@ -248,7 +248,7 @@ protected:
 
   nvbench::int64_t m_min_samples{10};
   nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_noise{0.005}; // 0.5% relative standard deviation
+  nvbench::float64_t m_max_noise{0.01}; // 1% relative standard deviation
 
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};

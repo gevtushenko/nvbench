@@ -99,7 +99,7 @@
 * `--max-noise <value>`
   * Gather samples until the error in the measurement drops below `<value>`.
   * Noise is specified as the percent relative standard deviation.
-  * Default is 0.5% (`--max-noise 0.5`)
+  * Default is 1.0% (`--max-noise 0.5`)
   * Only applies to Cold measurements.
   * If both GPU and CPU times are gathered, this applies to GPU noise only.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
