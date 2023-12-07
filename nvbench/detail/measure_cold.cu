@@ -29,6 +29,8 @@
 
 #include <fmt/format.h>
 
+#include <fstream>
+#include <iostream>
 #include <algorithm>
 #include <cstdio>
 #include <stdexcept>
@@ -76,6 +78,56 @@ void measure_cold_base::initialize()
 
 void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
 
+void measure_cold_base::simulate(const char* filename)
+{
+  std::vector<double> samples;
+
+  {
+    std::ifstream file(filename);
+
+    // Read doubles into array
+    double sample;
+    while (file >> sample)
+    {
+      samples.push_back(sample);
+    }
+  }
+
+  initialize();
+  m_run_once = false;
+  m_min_time = 0.1;
+  m_min_samples = 15;
+
+  // Simulate record measurements
+  std::cout << "Simulating: " << samples.size() << " samples\n";
+  for (const auto sample : samples)
+  {
+    m_cuda_times.push_back(sample);
+    m_cpu_times.push_back(sample);
+    m_total_cuda_time += sample;
+    m_total_cpu_time += sample;
+    ++m_total_samples;
+
+    // Compute convergence statistics using CUDA timings:
+    const auto mean_cuda_time = m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples);
+    const auto cuda_stdev     = nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
+                                                                            m_cuda_times.cend(),
+                                                                            mean_cuda_time);
+    auto cuda_rel_stdev       = cuda_stdev / mean_cuda_time;
+    if (std::isfinite(cuda_rel_stdev))
+    {
+      m_noise_tracker.push_back(cuda_rel_stdev);
+    }
+
+    if (is_finished())
+    {
+      std::cout << "Finished at " << m_total_samples << " samples\n";
+      return;
+    }
+  }
+  std::cout << "Finished at " << m_total_samples << " samples\n";
+}
+
 void measure_cold_base::record_measurements()
 {
   // Update and record timers and counters:
@@ -106,9 +158,17 @@ bool measure_cold_base::is_finished()
     return true;
   }
 
+  static bool check = false;
+
   // Check that we've gathered enough samples:
   if (m_total_cuda_time > m_min_time && m_total_samples > m_min_samples)
   {
+    if (check == false)
+    {
+      check = true;
+      std::cout << "Passed min_time and min_samples at " << m_total_samples << " samples\n";
+    }
+
     // Noise has dropped below threshold
     if (m_noise_tracker.back() < m_max_noise)
     {
@@ -140,14 +200,6 @@ bool measure_cold_base::is_finished()
         return true;
       }
     }
-  }
-
-  // Check for timeouts:
-  m_walltime_timer.stop();
-  if (m_walltime_timer.get_duration() > m_timeout)
-  {
-    m_max_time_exceeded = true;
-    return true;
   }
 
   return false;

@@ -54,6 +54,8 @@ struct measure_cold_base
   measure_cold_base &operator=(const measure_cold_base &) = delete;
   measure_cold_base &operator=(measure_cold_base &&)      = delete;
 
+  void simulate(const char* filename);
+
 protected:
   template <bool use_blocking_kernel>
   struct kernel_launch_timer;
