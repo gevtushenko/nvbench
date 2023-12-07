@@ -106,41 +106,7 @@ bool measure_cold_base::is_finished()
     return true;
   }
 
-  // Check that we've gathered enough samples:
-  if (m_total_cuda_time > m_min_time && m_total_samples > m_min_samples)
-  {
-    // Noise has dropped below threshold
-    if (m_noise_tracker.back() < m_max_noise)
-    {
-      return true;
-    }
-
-    // Check if the noise (cuda rel stdev) has converged by inspecting a
-    // trailing window of recorded noise measurements.
-    // This helps identify benchmarks that are inherently noisy and would
-    // never converge to the target stdev threshold. This check ensures that the
-    // benchmark will end if the stdev stabilizes above the target threshold.
-    // Gather some iterations before checking noise, and limit how often we
-    // check this.
-    if (m_noise_tracker.size() > 64 && (m_total_samples % 16 == 0))
-    {
-      // Use the current noise as the stdev reference.
-      const auto current_noise = m_noise_tracker.back();
-      const auto noise_stdev =
-        nvbench::detail::statistics::standard_deviation(m_noise_tracker.cbegin(),
-                                                        m_noise_tracker.cend(),
-                                                        current_noise);
-      const auto noise_rel_stdev = noise_stdev / current_noise;
-
-      // If the rel stdev of the last N cuda noise measurements is less than
-      // 5%, consider the result stable.
-      const auto noise_threshold = 0.05;
-      if (noise_rel_stdev < noise_threshold)
-      {
-        return true;
-      }
-    }
-  }
+  return m_total_samples >= 10'000;
 
   // Check for timeouts:
   m_walltime_timer.stop();
