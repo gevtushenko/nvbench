@@ -106,7 +106,7 @@ bool measure_cold_base::is_finished()
     return true;
   }
 
-  return m_total_samples >= 25'000;
+  return m_total_samples >= 2'000;
 
   // Check for timeouts:
   m_walltime_timer.stop();
