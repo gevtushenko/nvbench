@@ -178,14 +178,22 @@ void measure_cold_base::generate_summaries()
     summ.set_float64("value", avg_cuda_time);
   }
 
-  // TODO
-  // {
-  //   auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");
-  //   summ.set_string("name", "Noise");
-  //   summ.set_string("hint", "percentage");
-  //   summ.set_string("description", "Relative standard deviation of isolated GPU times");
-  //   summ.set_float64("value", m_noise_tracker);
-  // }
+  const auto mean_cuda_time = m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples);
+  const auto cuda_stdev     = nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
+                                                                          m_cuda_times.cend(),
+                                                                          mean_cuda_time);
+  const auto cuda_rel_stdev = cuda_stdev / mean_cuda_time;
+  const auto noise = cuda_rel_stdev;
+  const auto max_noise = m_criterion_params.get_float64("max_noise");
+  const auto min_time = m_criterion_params.get_float64("min_time");
+
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");
+    summ.set_string("name", "Noise");
+    summ.set_string("hint", "percentage");
+    summ.set_string("description", "Relative standard deviation of isolated GPU times");
+    summ.set_float64("value", noise);
+  }
 
   if (const auto items = m_state.get_element_count(); items != 0)
   {
@@ -241,17 +249,16 @@ void measure_cold_base::generate_summaries()
     {
       const auto timeout = m_walltime_timer.get_duration();
 
-      // TODO
-      // if (m_noise_tracker > m_max_noise)
-      // {
-      //   printer.log(nvbench::log_level::warn,
-      //               fmt::format("Current measurement timed out ({:0.2f}s) "
-      //                           "while over noise threshold ({:0.2f}% > "
-      //                           "{:0.2f}%)",
-      //                           timeout,
-      //                           m_noise_tracker * 100,
-      //                           m_max_noise * 100));
-      // }
+      if (noise > max_noise)
+      {
+        printer.log(nvbench::log_level::warn,
+                    fmt::format("Current measurement timed out ({:0.2f}s) "
+                                "while over noise threshold ({:0.2f}% > "
+                                "{:0.2f}%)",
+                                timeout,
+                                noise * 100,
+                                max_noise * 100));
+      }
       if (m_total_samples < m_min_samples)
       {
         printer.log(nvbench::log_level::warn,
@@ -261,17 +268,16 @@ void measure_cold_base::generate_summaries()
                                 m_total_samples,
                                 m_min_samples));
       }
-      // TODO
-      // if (m_total_cuda_time < m_min_time)
-      // {
-      //   printer.log(nvbench::log_level::warn,
-      //               fmt::format("Current measurement timed out ({:0.2f}s) "
-      //                           "before accumulating min_time ({:0.2f}s < "
-      //                           "{:0.2f}s)",
-      //                           timeout,
-      //                           m_total_cuda_time,
-      //                           m_min_time));
-      // }
+      if (m_total_cuda_time < min_time)
+      {
+        printer.log(nvbench::log_level::warn,
+                    fmt::format("Current measurement timed out ({:0.2f}s) "
+                                "before accumulating min_time ({:0.2f}s < "
+                                "{:0.2f}s)",
+                                timeout,
+                                m_total_cuda_time,
+                                min_time));
+      }
     }
 
     // Log to stdout:
