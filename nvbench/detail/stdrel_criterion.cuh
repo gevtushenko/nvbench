@@ -30,8 +30,8 @@ namespace nvbench::detail
 class stdrel_criterion final : public stopping_criterion
 {
   // parameters
-  nvbench::float64_t m_min_time{compat_max_noise()};
-  nvbench::float64_t m_max_noise{compat_min_time()}; 
+  nvbench::float64_t m_min_time{compat_min_time()};
+  nvbench::float64_t m_max_noise{compat_max_noise()}; 
 
   // state
   nvbench::int64_t m_total_samples{};
