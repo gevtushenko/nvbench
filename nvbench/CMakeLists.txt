@@ -24,6 +24,8 @@ set(srcs
   detail/measure_cold.cu
   detail/measure_hot.cu
   detail/state_generator.cxx
+  detail/stdrel_criterion.cxx
+  detail/entropy_criterion.cxx
 
   internal/nvml.cxx
 )
