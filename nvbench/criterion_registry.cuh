@@ -19,29 +19,29 @@
 #pragma once
 
 #include <nvbench/types.cuh>
-#include <nvbench/detail/stopping_criterion.cuh>
+#include <nvbench/stopping_criterion.cuh>
 #include <nvbench/detail/stdrel_criterion.cuh>
 #include <nvbench/detail/entropy_criterion.cuh>
 
 #include <unordered_map>
 #include <memory>
 
-namespace nvbench::detail
+namespace nvbench
 {
 
 class criterion_registry
 {
-  std::unordered_map<std::string, std::unique_ptr<stopping_criterion>> m_map;
+  std::unordered_map<std::string, std::unique_ptr<nvbench::stopping_criterion>> m_map;
 
   criterion_registry();
 
 public:
   static criterion_registry &instance();
 
-  static stopping_criterion* get(const std::string& name);
+  static nvbench::stopping_criterion* get(const std::string& name);
 
   static bool register_criterion(std::string name,
-                                 std::unique_ptr<stopping_criterion> criterion);
+                                 std::unique_ptr<nvbench::stopping_criterion> criterion);
 };
 
-} // namespace nvbench::detail
+} // namespace nvbench

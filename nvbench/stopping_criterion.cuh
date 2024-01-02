@@ -24,7 +24,7 @@
 #include <unordered_map>
 #include <string>
 
-namespace nvbench::detail
+namespace nvbench
 {
 
 constexpr nvbench::float64_t compat_min_time() { return 0.5; }    // 0.5 seconds
@@ -51,4 +51,4 @@ public:
   virtual bool is_finished() = 0;
 };
 
-} // namespace nvbench::detail
+} // namespace nvbench

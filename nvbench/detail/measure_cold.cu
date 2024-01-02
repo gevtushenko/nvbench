@@ -19,6 +19,7 @@
 #include <nvbench/detail/measure_cold.cuh>
 
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/criterion_registry.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/printer_base.cuh>
 #include <nvbench/state.cuh>
@@ -26,7 +27,6 @@
 
 #include <nvbench/detail/ring_buffer.cuh>
 #include <nvbench/detail/throw.cuh>
-#include <nvbench/detail/criterion_registry.cuh>
 
 #include "nvbench/types.cuh"
 #include <fmt/format.h>
@@ -42,7 +42,7 @@ measure_cold_base::measure_cold_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{m_state.get_cuda_stream()}
     , m_criterion_params{exec_state.get_criterion_params()}
-    , m_stopping_criterion{nvbench::detail::criterion_registry::get(exec_state.get_stopping_criterion())}
+    , m_stopping_criterion{nvbench::criterion_registry::get(exec_state.get_stopping_criterion())}
     , m_run_once{exec_state.get_run_once()}
     , m_no_block{exec_state.get_disable_blocking_kernel()}
     , m_min_samples{exec_state.get_min_samples()}

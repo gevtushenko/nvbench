@@ -24,7 +24,7 @@
 #include <nvbench/named_values.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
-#include <nvbench/detail/stopping_criterion.cuh>
+#include <nvbench/stopping_criterion.cuh>
 
 #include <functional>
 #include <optional>
@@ -123,7 +123,7 @@ struct state
   void set_min_samples(nvbench::int64_t min_samples) { m_min_samples = min_samples; }
   /// @}
 
-  [[nodiscard]] const nvbench::detail::criterion_params &get_criterion_params() const
+  [[nodiscard]] const nvbench::criterion_params &get_criterion_params() const
   {
     return m_criterion_params;
   }
@@ -285,7 +285,7 @@ private:
   bool m_disable_blocking_kernel{false};
 
 
-  nvbench::detail::criterion_params m_criterion_params;
+  nvbench::criterion_params m_criterion_params;
   std::string m_stopping_criterion;
 
   nvbench::int64_t m_min_samples;

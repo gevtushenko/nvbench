@@ -20,21 +20,19 @@
 
 // Grab some testing kernels from NVBench:
 #include <nvbench/test_kernels.cuh>
-#include "nvbench/detail/criterion_registry.cuh"
-#include "nvbench/exec_tag.cuh"
 
 // Thrust vectors simplify memory management:
 #include <thrust/device_vector.h>
 
 // Inherit from the stopping_criterion class:
-class fixed_criterion final : public nvbench::detail::stopping_criterion 
+class fixed_criterion final : public nvbench::stopping_criterion 
 {
   nvbench::int64_t m_max_samples{};
   nvbench::int64_t m_num_samples{};
 
 public:
   // Setup the criterion in the `initialize()` method:
-  virtual void initialize(const nvbench::detail::criterion_params &params) override 
+  virtual void initialize(const nvbench::criterion_params &params) override 
   {
     m_num_samples = 0;
     m_max_samples = params.has_value("max-samples") ? params.get_int64("max-samples") : 42;
@@ -55,8 +53,8 @@ public:
 
 // Register the criterion with NVBench:
 static bool registered = //
-  nvbench::detail::criterion_registry::register_criterion("fixed",
-                                                          std::make_unique<fixed_criterion>());
+  nvbench::criterion_registry::register_criterion("fixed",
+                                                  std::make_unique<fixed_criterion>());
 
 void throughput_bench(nvbench::state &state)
 {

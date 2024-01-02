@@ -16,10 +16,10 @@
  *  limitations under the License.
  */
 
-#include <nvbench/detail/stopping_criterion.cuh>
+#include <nvbench/stopping_criterion.cuh>
 
 
-namespace nvbench::detail
+namespace nvbench
 {
 
 void criterion_params::set_int64(std::string name, nvbench::int64_t value)

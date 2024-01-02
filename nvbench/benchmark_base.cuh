@@ -22,12 +22,12 @@
 #include <nvbench/device_info.cuh>
 #include <nvbench/device_manager.cuh>
 #include <nvbench/state.cuh>
+#include <nvbench/stopping_criterion.cuh>
 
 #include <functional> // reference_wrapper, ref
 #include <memory>
 #include <optional>
 #include <vector>
-#include "nvbench/detail/stopping_criterion.cuh"
 
 namespace nvbench
 {
@@ -233,7 +233,7 @@ struct benchmark_base
   }
   /// @}
 
-  [[nodiscard]] const nvbench::detail::criterion_params& get_criterion_params() const { return m_criterion_params; }
+  [[nodiscard]] const nvbench::criterion_params& get_criterion_params() const { return m_criterion_params; }
 
   /// Control the stopping criterion for the measurement loop.
   /// @{
@@ -266,7 +266,7 @@ protected:
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};
 
-  nvbench::detail::criterion_params m_criterion_params;
+  nvbench::criterion_params m_criterion_params;
   std::string m_stopping_criterion{"stdrel"};
 
 private:

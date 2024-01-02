@@ -16,16 +16,16 @@
  *  limitations under the License.
  */
 
-#include <nvbench/detail/criterion_registry.cuh>
+#include <nvbench/criterion_registry.cuh>
 #include <nvbench/detail/throw.cuh>
 
-namespace nvbench::detail
+namespace nvbench
 {
 
 criterion_registry::criterion_registry()
 {
-  m_map.emplace("stdrel", std::make_unique<stdrel_criterion>());
-  m_map.emplace("entropy", std::make_unique<entropy_criterion>());
+  m_map.emplace("stdrel", std::make_unique<nvbench::detail::stdrel_criterion>());
+  m_map.emplace("entropy", std::make_unique<nvbench::detail::entropy_criterion>());
 }
 
 criterion_registry &criterion_registry::instance()
@@ -53,4 +53,4 @@ bool criterion_registry::register_criterion(std::string name,
   return registry.m_map.emplace(std::move(name), std::move(criterion)).second;
 }
 
-} // namespace nvbench::detail
+} // namespace nvbench

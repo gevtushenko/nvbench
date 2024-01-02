@@ -25,12 +25,12 @@
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
+#include <nvbench/stopping_criterion.cuh>
 
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #include <nvbench/detail/l2flush.cuh>
 #include <nvbench/detail/ring_buffer.cuh>
 #include <nvbench/detail/statistics.cuh>
-#include <nvbench/detail/stopping_criterion.cuh>
 
 #include <cuda_runtime.h>
 
@@ -88,8 +88,8 @@ protected:
   nvbench::detail::l2flush m_l2flush;
   nvbench::blocking_kernel m_blocker;
 
-  nvbench::detail::criterion_params m_criterion_params;
-  nvbench::detail::stopping_criterion* m_stopping_criterion{};
+  nvbench::criterion_params m_criterion_params;
+  nvbench::stopping_criterion* m_stopping_criterion{};
 
   bool m_run_once{false};
   bool m_no_block{false};

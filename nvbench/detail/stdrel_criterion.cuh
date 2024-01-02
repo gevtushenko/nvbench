@@ -19,7 +19,7 @@
 #pragma once
 
 #include <nvbench/types.cuh>
-#include <nvbench/detail/stopping_criterion.cuh>
+#include <nvbench/stopping_criterion.cuh>
 #include <nvbench/detail/ring_buffer.cuh>
 
 #include <vector>
