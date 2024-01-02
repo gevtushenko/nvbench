@@ -40,7 +40,7 @@ public:
 
   static stopping_criterion* get(const std::string& name);
 
-  void register_criterion(std::string name,
+  bool register_criterion(std::string name,
                           std::unique_ptr<stopping_criterion> criterion);
 };
 

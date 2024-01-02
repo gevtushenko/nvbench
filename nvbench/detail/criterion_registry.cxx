@@ -46,10 +46,10 @@ stopping_criterion* criterion_registry::get(const std::string& name)
   return iter->second.get();
 }
 
-void criterion_registry::register_criterion(std::string name,
+bool criterion_registry::register_criterion(std::string name,
                                             std::unique_ptr<stopping_criterion> criterion)
 {
-  m_map.emplace(std::move(name), std::move(criterion));
+  return m_map.emplace(std::move(name), std::move(criterion)).second;
 }
 
 } // namespace nvbench::detail
