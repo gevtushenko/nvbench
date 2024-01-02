@@ -122,6 +122,12 @@ struct state
   void set_min_samples(nvbench::int64_t min_samples) { m_min_samples = min_samples; }
   /// @}
 
+  /// Control the stopping criterion for the measurement loop.
+  /// @{
+  [[nodiscard]] const std::string& get_stopping_criterion() const { return m_stopping_criterion; }
+  void set_stopping_criterion(std::string criterion) { m_stopping_criterion = std::move(criterion); }
+  /// @}
+
   /// If true, the benchmark is only run once, skipping all warmup runs and only
   /// executing a single non-batched measurement. This is intended for use with
   /// external profiling tools. @{
@@ -270,6 +276,8 @@ private:
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
 
+
+  std::string m_stopping_criterion;
   nvbench::int64_t m_min_samples;
   nvbench::float64_t m_min_time;
   nvbench::float64_t m_max_noise;

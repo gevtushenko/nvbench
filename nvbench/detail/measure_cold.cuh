@@ -30,6 +30,7 @@
 #include <nvbench/detail/l2flush.cuh>
 #include <nvbench/detail/ring_buffer.cuh>
 #include <nvbench/detail/statistics.cuh>
+#include <nvbench/detail/stopping_criterion.cuh>
 
 #include <cuda_runtime.h>
 
@@ -75,7 +76,6 @@ protected:
     NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
   }
 
-  double compute_entropy();
   void block_stream();
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
 
@@ -87,13 +87,12 @@ protected:
   nvbench::cpu_timer m_walltime_timer;
   nvbench::detail::l2flush m_l2flush;
   nvbench::blocking_kernel m_blocker;
+  nvbench::detail::stopping_criterion* m_stopping_criterion{};
 
   bool m_run_once{false};
   bool m_no_block{false};
 
   nvbench::int64_t m_min_samples{};
-  nvbench::float64_t m_max_noise{}; // rel stdev
-  nvbench::float64_t m_min_time{};
 
   nvbench::float64_t m_skip_time{};
   nvbench::float64_t m_timeout{};
@@ -102,16 +101,6 @@ protected:
   nvbench::float64_t m_total_cuda_time{};
   nvbench::float64_t m_total_cpu_time{};
   nvbench::float64_t m_cpu_noise{}; // rel stdev
-
-  // Check entropy every m_entropy_check_threshold samples
-  static constexpr nvbench::uint64_t m_entropy_check_threshold{4};
-
-  std::vector<std::pair<nvbench::float64_t, nvbench::int64_t>> m_freq_tracker;
-  std::vector<nvbench::float64_t> m_ps;
-
-  // Trailing history of entropy measurements for convergence tests
-  nvbench::detail::ring_buffer<nvbench::float64_t> m_entropy_tracker{32};
-  nvbench::float64_t m_noise_tracker{std::numeric_limits<nvbench::float64_t>::infinity()};
 
   std::vector<nvbench::float64_t> m_cuda_times;
   std::vector<nvbench::float64_t> m_cpu_times;

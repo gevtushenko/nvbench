@@ -36,6 +36,7 @@ state::state(const benchmark_base &bench)
     : m_benchmark{bench}
     , m_run_once{bench.get_run_once()}
     , m_disable_blocking_kernel{bench.get_disable_blocking_kernel()}
+    , m_stopping_criterion(bench.get_stopping_criterion())
     , m_min_samples{bench.get_min_samples()}
     , m_min_time{bench.get_min_time()}
     , m_max_noise{bench.get_max_noise()}
@@ -53,6 +54,7 @@ state::state(const benchmark_base &bench,
     , m_type_config_index{type_config_index}
     , m_run_once{bench.get_run_once()}
     , m_disable_blocking_kernel{bench.get_disable_blocking_kernel()}
+    , m_stopping_criterion(bench.get_stopping_criterion())
     , m_min_samples{bench.get_min_samples()}
     , m_min_time{bench.get_min_time()}
     , m_max_noise{bench.get_max_noise()}

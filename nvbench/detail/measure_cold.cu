@@ -26,6 +26,7 @@
 
 #include <nvbench/detail/ring_buffer.cuh>
 #include <nvbench/detail/throw.cuh>
+#include <nvbench/detail/criterion_registry.cuh>
 
 #include "nvbench/types.cuh"
 #include <fmt/format.h>
@@ -40,18 +41,16 @@ namespace nvbench::detail
 measure_cold_base::measure_cold_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{m_state.get_cuda_stream()}
+    , m_stopping_criterion{nvbench::detail::criterion_registry::get(exec_state.get_stopping_criterion())}
     , m_run_once{exec_state.get_run_once()}
     , m_no_block{exec_state.get_disable_blocking_kernel()}
     , m_min_samples{exec_state.get_min_samples()}
-    , m_max_noise{exec_state.get_max_noise()}
-    , m_min_time{exec_state.get_min_time()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
 {
   if (m_min_samples > 0)
   {
     m_cuda_times.reserve(m_min_samples);
-    m_freq_tracker.reserve(m_min_samples);
     m_cpu_times.reserve(m_min_samples);
   }
 }
@@ -75,39 +74,14 @@ void measure_cold_base::initialize()
   m_total_cpu_time  = 0.;
   m_cpu_noise       = 0.;
   m_total_samples   = 0;
-  m_noise_tracker   = std::numeric_limits<nvbench::float64_t>::infinity();
-  m_entropy_tracker.clear();
   m_cuda_times.clear();
-  m_freq_tracker.clear();
   m_cpu_times.clear();
   m_max_time_exceeded = false;
+
+  m_stopping_criterion->initialize(); // TODO params?
 }
 
 void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
-
-double measure_cold_base::compute_entropy() 
-{
-  const std::size_t n = m_freq_tracker.size();
-  if (n == 0)
-  {
-    return 0.0;
-  }
-
-  m_ps.resize(n);
-  for (std::size_t i = 0; i < n; i++)
-  {
-    m_ps[i] = static_cast<nvbench::float64_t>(m_freq_tracker[i].second) /
-              static_cast<nvbench::float64_t>(m_total_samples);
-  }
-
-  nvbench::float64_t entropy{};
-  for (nvbench::float64_t p : m_ps)
-  {
-    entropy -= p * std::log2(p);
-  }
-
-  return entropy;
-}
 
 void measure_cold_base::record_measurements()
 {
@@ -115,55 +89,12 @@ void measure_cold_base::record_measurements()
   const auto cur_cuda_time = m_cuda_timer.get_duration();
   const auto cur_cpu_time  = m_cpu_timer.get_duration();
   m_cuda_times.push_back(cur_cuda_time);
-
-  {
-    auto key = cur_cuda_time;
-    constexpr bool bin_keys = true;
-
-    if (bin_keys) 
-    {
-      const auto resolution_us = 0.5;
-      const auto resulution_s = resolution_us / 1'000'000;
-      const auto epsilon = resulution_s * 2;
-      key = std::round(key / epsilon) * epsilon;
-    }
-
-    auto it = std::lower_bound(m_freq_tracker.begin(),
-                               m_freq_tracker.end(),
-                               std::make_pair(key, nvbench::int64_t{}));
-
-    if (it != m_freq_tracker.end() && it->first == key)
-    {
-      it->second += 1;
-    }
-    else
-    {
-      m_freq_tracker.insert(it, std::make_pair(key, nvbench::int64_t{1}));
-    }
-  }
-
   m_cpu_times.push_back(cur_cpu_time);
   m_total_cuda_time += cur_cuda_time;
   m_total_cpu_time += cur_cpu_time;
   ++m_total_samples;
 
-  if (m_total_samples % m_entropy_check_threshold == 0)
-  {
-    m_entropy_tracker.push_back(compute_entropy());
-
-    const auto mean_entropy =
-      std::accumulate(m_entropy_tracker.cbegin(), m_entropy_tracker.cend(), 0.) /
-      static_cast<nvbench::float64_t>(m_entropy_tracker.size());
-    const auto entropy_stdev =
-      nvbench::detail::statistics::standard_deviation(m_entropy_tracker.cbegin(),
-                                                      m_entropy_tracker.cend(),
-                                                      mean_entropy);
-    const auto entropy_rel_stdev = entropy_stdev / mean_entropy;
-    if (std::isfinite(entropy_stdev))
-    {
-      m_noise_tracker = entropy_rel_stdev;
-    }
-  }
+  m_stopping_criterion->add_measurement(cur_cuda_time);
 }
 
 bool measure_cold_base::is_finished()
@@ -174,15 +105,11 @@ bool measure_cold_base::is_finished()
   }
 
   // Check that we've gathered enough samples:
-  if (m_total_cuda_time > m_min_time && m_total_samples > m_min_samples)
+  if (m_total_samples > m_min_samples)
   {
-    if (m_total_samples % m_entropy_check_threshold == 0)
+    if (m_stopping_criterion->is_finished())
     {
-      // Noise has dropped below threshold
-      if (m_noise_tracker < m_max_noise)
-      {
-        return true;
-      }
+      return true;
     }
   }
 
@@ -250,13 +177,14 @@ void measure_cold_base::generate_summaries()
     summ.set_float64("value", avg_cuda_time);
   }
 
-  {
-    auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");
-    summ.set_string("name", "Noise");
-    summ.set_string("hint", "percentage");
-    summ.set_string("description", "Relative standard deviation of isolated GPU times");
-    summ.set_float64("value", m_noise_tracker);
-  }
+  // TODO
+  // {
+  //   auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");
+  //   summ.set_string("name", "Noise");
+  //   summ.set_string("hint", "percentage");
+  //   summ.set_string("description", "Relative standard deviation of isolated GPU times");
+  //   summ.set_float64("value", m_noise_tracker);
+  // }
 
   if (const auto items = m_state.get_element_count(); items != 0)
   {
@@ -312,16 +240,17 @@ void measure_cold_base::generate_summaries()
     {
       const auto timeout = m_walltime_timer.get_duration();
 
-      if (m_noise_tracker > m_max_noise)
-      {
-        printer.log(nvbench::log_level::warn,
-                    fmt::format("Current measurement timed out ({:0.2f}s) "
-                                "while over noise threshold ({:0.2f}% > "
-                                "{:0.2f}%)",
-                                timeout,
-                                m_noise_tracker * 100,
-                                m_max_noise * 100));
-      }
+      // TODO
+      // if (m_noise_tracker > m_max_noise)
+      // {
+      //   printer.log(nvbench::log_level::warn,
+      //               fmt::format("Current measurement timed out ({:0.2f}s) "
+      //                           "while over noise threshold ({:0.2f}% > "
+      //                           "{:0.2f}%)",
+      //                           timeout,
+      //                           m_noise_tracker * 100,
+      //                           m_max_noise * 100));
+      // }
       if (m_total_samples < m_min_samples)
       {
         printer.log(nvbench::log_level::warn,
@@ -331,16 +260,17 @@ void measure_cold_base::generate_summaries()
                                 m_total_samples,
                                 m_min_samples));
       }
-      if (m_total_cuda_time < m_min_time)
-      {
-        printer.log(nvbench::log_level::warn,
-                    fmt::format("Current measurement timed out ({:0.2f}s) "
-                                "before accumulating min_time ({:0.2f}s < "
-                                "{:0.2f}s)",
-                                timeout,
-                                m_total_cuda_time,
-                                m_min_time));
-      }
+      // TODO
+      // if (m_total_cuda_time < m_min_time)
+      // {
+      //   printer.log(nvbench::log_level::warn,
+      //               fmt::format("Current measurement timed out ({:0.2f}s) "
+      //                           "before accumulating min_time ({:0.2f}s < "
+      //                           "{:0.2f}s)",
+      //                           timeout,
+      //                           m_total_cuda_time,
+      //                           m_min_time));
+      // }
     }
 
     // Log to stdout:

@@ -26,6 +26,7 @@ set(srcs
   detail/state_generator.cxx
   detail/stdrel_criterion.cxx
   detail/entropy_criterion.cxx
+  detail/criterion_registry.cxx
 
   internal/nvml.cxx
 )

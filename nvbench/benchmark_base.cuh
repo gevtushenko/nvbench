@@ -230,6 +230,16 @@ struct benchmark_base
   }
   /// @}
 
+  /// Control the stopping criterion for the measurement loop.
+  /// @{
+  [[nodiscard]] const std::string& get_stopping_criterion() const { return m_stopping_criterion; }
+  benchmark_base &set_stopping_criterion(std::string criterion)
+  {
+    m_stopping_criterion = std::move(criterion);
+    return *this;
+  }
+  /// @}
+
 protected:
   friend struct nvbench::runner_base;
 
@@ -252,6 +262,8 @@ protected:
 
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};
+
+  std::string m_stopping_criterion{"stdrel"};
 
 private:
   // route these through virtuals so the templated subclass can inject type info
