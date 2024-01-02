@@ -41,6 +41,8 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
   result->m_skip_time = m_skip_time;
   result->m_timeout   = m_timeout;
 
+  result->m_stopping_criterion = m_stopping_criterion;
+
   return result;
 }
 
