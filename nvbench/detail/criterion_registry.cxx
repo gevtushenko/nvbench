@@ -24,8 +24,8 @@ namespace nvbench::detail
 
 criterion_registry::criterion_registry()
 {
-  this->register_criterion("stdrel", std::make_unique<stdrel_criterion>());
-  this->register_criterion("entropy", std::make_unique<entropy_criterion>());
+  m_map.emplace("stdrel", std::make_unique<stdrel_criterion>());
+  m_map.emplace("entropy", std::make_unique<entropy_criterion>());
 }
 
 criterion_registry &criterion_registry::instance()
@@ -49,7 +49,8 @@ stopping_criterion* criterion_registry::get(const std::string& name)
 bool criterion_registry::register_criterion(std::string name,
                                             std::unique_ptr<stopping_criterion> criterion)
 {
-  return m_map.emplace(std::move(name), std::move(criterion)).second;
+  criterion_registry& registry = instance();
+  return registry.m_map.emplace(std::move(name), std::move(criterion)).second;
 }
 
 } // namespace nvbench::detail

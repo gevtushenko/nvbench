@@ -40,8 +40,8 @@ public:
 
   static stopping_criterion* get(const std::string& name);
 
-  bool register_criterion(std::string name,
-                          std::unique_ptr<stopping_criterion> criterion);
+  static bool register_criterion(std::string name,
+                                 std::unique_ptr<stopping_criterion> criterion);
 };
 
 } // namespace nvbench::detail

@@ -54,9 +54,9 @@ public:
 };
 
 // Register the criterion with NVBench:
-static bool registered = nvbench::detail::criterion_registry::instance().register_criterion(
-  "fixed",
-  std::make_unique<fixed_criterion>());
+static bool registered = //
+  nvbench::detail::criterion_registry::register_criterion("fixed",
+                                                          std::make_unique<fixed_criterion>());
 
 void throughput_bench(nvbench::state &state)
 {
