@@ -18,7 +18,6 @@
 
 #include <nvbench/detail/stdrel_criterion.cuh>
 
-
 namespace nvbench::detail
 {
 

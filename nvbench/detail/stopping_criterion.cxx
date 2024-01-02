@@ -58,13 +58,16 @@ nvbench::int64_t criterion_params::get_int64(const std::string &name) const
 
 nvbench::float64_t criterion_params::get_float64(const std::string &name) const
 {
-  if (name == "max_noise")
-  { // compat
-    return compat_max_noise();
-  }
-  else if (name == "min_time")
-  { // compat
-    return compat_min_time();
+  if (!m_named_values.has_value(name)) 
+  {
+    if (name == "max_noise")
+    { // compat
+      return compat_max_noise();
+    }
+    else if (name == "min_time")
+    { // compat
+      return compat_min_time();
+    }
   }
   return m_named_values.get_float64(name);
 }
