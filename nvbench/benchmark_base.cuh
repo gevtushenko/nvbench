@@ -27,6 +27,7 @@
 #include <memory>
 #include <optional>
 #include <vector>
+#include "nvbench/detail/stopping_criterion.cuh"
 
 namespace nvbench
 {
@@ -181,22 +182,24 @@ struct benchmark_base
   }
   /// @}
 
+  // TODO Deprecate
   /// Accumulate at least this many seconds of timing data per measurement. @{
-  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
+  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_criterion_params.get_float64("min_time"); }
   benchmark_base &set_min_time(nvbench::float64_t min_time)
   {
-    m_min_time = min_time;
+    m_criterion_params.set_float64("min_time", min_time);
     return *this;
   }
   /// @}
 
+  // TODO Deprecate
   /// Specify the maximum amount of noise if a measurement supports noise.
   /// Noise is the relative standard deviation:
   /// `noise = stdev / mean_time`. @{
-  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_max_noise; }
+  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_criterion_params.get_float64("max_noise"); }
   benchmark_base &set_max_noise(nvbench::float64_t max_noise)
   {
-    m_max_noise = max_noise;
+    m_criterion_params.set_float64("max_noise", max_noise);
     return *this;
   }
   /// @}
@@ -230,6 +233,8 @@ struct benchmark_base
   }
   /// @}
 
+  [[nodiscard]] const nvbench::detail::criterion_params& get_criterion_params() const { return m_criterion_params; }
+
   /// Control the stopping criterion for the measurement loop.
   /// @{
   [[nodiscard]] const std::string& get_stopping_criterion() const { return m_stopping_criterion; }
@@ -257,12 +262,11 @@ protected:
   bool m_disable_blocking_kernel{false};
 
   nvbench::int64_t m_min_samples{10};
-  nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_noise{0.01}; // 1% relative standard deviation
 
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};
 
+  nvbench::detail::criterion_params m_criterion_params;
   std::string m_stopping_criterion{"stdrel"};
 
 private:

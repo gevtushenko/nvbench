@@ -27,6 +27,7 @@ set(srcs
   detail/stdrel_criterion.cxx
   detail/entropy_criterion.cxx
   detail/criterion_registry.cxx
+  detail/stopping_criterion.cxx
 
   internal/nvml.cxx
 )

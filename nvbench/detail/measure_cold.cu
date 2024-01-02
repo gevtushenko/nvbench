@@ -41,6 +41,7 @@ namespace nvbench::detail
 measure_cold_base::measure_cold_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{m_state.get_cuda_stream()}
+    , m_criterion_params{exec_state.get_criterion_params()}
     , m_stopping_criterion{nvbench::detail::criterion_registry::get(exec_state.get_stopping_criterion())}
     , m_run_once{exec_state.get_run_once()}
     , m_no_block{exec_state.get_disable_blocking_kernel()}
@@ -78,7 +79,7 @@ void measure_cold_base::initialize()
   m_cpu_times.clear();
   m_max_time_exceeded = false;
 
-  m_stopping_criterion->initialize(); // TODO params?
+  m_stopping_criterion->initialize(m_criterion_params);
 }
 
 void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }

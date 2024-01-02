@@ -20,6 +20,7 @@
 
 #include <nvbench/types.cuh>
 #include <nvbench/detail/stopping_criterion.cuh>
+#include <nvbench/detail/ring_buffer.cuh>
 
 #include <vector>
 
@@ -29,8 +30,8 @@ namespace nvbench::detail
 class stdrel_criterion final : public stopping_criterion
 {
   // parameters
-  nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_noise{0.005}; // 0.5% relative standard deviation
+  nvbench::float64_t m_min_time{compat_max_noise()};
+  nvbench::float64_t m_max_noise{compat_min_time()}; 
 
   // state
   nvbench::int64_t m_total_samples{};
@@ -39,7 +40,7 @@ class stdrel_criterion final : public stopping_criterion
   nvbench::detail::ring_buffer<nvbench::float64_t> m_noise_tracker{512};
 
 public:
-  virtual void initialize() override;
+  virtual void initialize(const criterion_params &params) override;
   virtual void add_measurement(nvbench::float64_t measurement) override;
   virtual bool is_finished() override;
 };

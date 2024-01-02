@@ -20,6 +20,7 @@
 
 #include <nvbench/types.cuh>
 #include <nvbench/detail/stopping_criterion.cuh>
+#include <nvbench/detail/ring_buffer.cuh>
 
 #include <vector>
 
@@ -42,7 +43,7 @@ class entropy_criterion final : public stopping_criterion
   nvbench::float64_t compute_entropy();
 
 public:
-  virtual void initialize() override;
+  virtual void initialize(const criterion_params &params) override;
   virtual void add_measurement(nvbench::float64_t measurement) override;
   virtual bool is_finished() override;
 };

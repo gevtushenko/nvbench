@@ -25,12 +25,22 @@
 namespace nvbench::detail
 {
 
-void entropy_criterion::initialize()
+void entropy_criterion::initialize(const criterion_params &params)
 {
   m_total_samples = 0;
   m_total_cuda_time = 0.0;
   m_entropy_tracker.clear();
   m_freq_tracker.clear();
+
+  if (params.has_value("max_angle"))
+  {
+    m_max_angle = params.get_float64("max_angle");
+  }
+
+  if (params.has_value("min_r2"))
+  {
+    m_min_r2 = params.get_float64("min_r2");
+  }
 }
 
 void entropy_criterion::add_measurement(nvbench::float64_t measurement)

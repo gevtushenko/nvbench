@@ -19,17 +19,34 @@
 #pragma once
 
 #include <nvbench/types.cuh>
-#include <nvbench/detail/ring_buffer.cuh>
+#include <nvbench/named_values.cuh>
 
-#include <vector>
+#include <unordered_map>
+#include <string>
 
 namespace nvbench::detail
 {
 
+constexpr nvbench::float64_t compat_max_noise() { return 0.005; } // 0.5% relative standard deviation
+constexpr nvbench::float64_t compat_min_time() { return 0.5; }    // 0.5 seconds
+
+class criterion_params
+{
+  nvbench::named_values m_named_values;
+public:
+
+  void set_int64(std::string name, nvbench::int64_t value);
+  void set_float64(std::string name, nvbench::float64_t value);
+
+  [[nodiscard]] bool has_value(const std::string &name) const;
+  [[nodiscard]] nvbench::int64_t get_int64(const std::string &name) const;
+  [[nodiscard]] nvbench::float64_t get_float64(const std::string &name) const;
+};
+
 class stopping_criterion
 {
 public:
-  virtual void initialize() = 0;
+  virtual void initialize(const criterion_params &params) = 0;
   virtual void add_measurement(nvbench::float64_t measurement) = 0;
   virtual bool is_finished() = 0;
 };

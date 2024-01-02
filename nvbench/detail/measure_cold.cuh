@@ -87,6 +87,8 @@ protected:
   nvbench::cpu_timer m_walltime_timer;
   nvbench::detail::l2flush m_l2flush;
   nvbench::blocking_kernel m_blocker;
+
+  nvbench::detail::criterion_params m_criterion_params;
   nvbench::detail::stopping_criterion* m_stopping_criterion{};
 
   bool m_run_once{false};

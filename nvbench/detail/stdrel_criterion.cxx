@@ -22,12 +22,22 @@
 namespace nvbench::detail
 {
 
-void stdrel_criterion::initialize()
+void stdrel_criterion::initialize(const criterion_params &params)
 {
   m_total_samples = 0;
   m_total_cuda_time = 0.0;
   m_cuda_times.clear();
   m_noise_tracker.clear();
+
+  if (params.has_value("max_noise"))
+  {
+    m_max_noise = params.get_float64("max_noise");
+  }
+
+  if (params.has_value("min_time"))
+  {
+    m_min_time = params.get_float64("min_time");
+  }
 }
 
 void stdrel_criterion::add_measurement(nvbench::float64_t measurement)
