@@ -86,6 +86,7 @@ private:
   void set_persistence_mode(const std::string &state);
   void lock_gpu_clocks(const std::string &rate);
 
+  void set_stopping_criterion(const std::string &criterion);
   void enable_run_once();
   void disable_blocking_kernel();
 

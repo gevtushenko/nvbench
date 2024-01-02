@@ -433,6 +433,12 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->enable_run_once();
       first += 1;
     }
+    else if (arg == "--stopping-criterion")
+    {
+      check_params(1);
+      this->set_stopping_criterion(first[1]);
+      first += 2;
+    }
     else if (arg == "--disable-blocking-kernel")
     {
       this->disable_blocking_kernel();
@@ -696,6 +702,20 @@ void option_parser::enable_run_once()
 
   benchmark_base &bench = *m_benchmarks.back();
   bench.set_run_once(true);
+}
+
+void option_parser::set_stopping_criterion(const std::string &criterion)
+{
+  // If no active benchmark, save args as global.
+  if (m_benchmarks.empty())
+  {
+    m_global_benchmark_args.push_back("--stopping-criterion");
+    m_global_benchmark_args.push_back(criterion);
+    return;
+  }
+
+  benchmark_base &bench = *m_benchmarks.back();
+  bench.set_stopping_criterion(criterion);
 }
 
 void option_parser::disable_blocking_kernel()
