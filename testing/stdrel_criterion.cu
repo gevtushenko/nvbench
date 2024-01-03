@@ -51,6 +51,8 @@ std::vector<double> generate(double mean, double rel_std_dev, int size)
 
 void test_stdrel()
 {
+  const nvbench::int64_t size = 10;
+  const nvbench::float64_t mean = 42.0;
   const nvbench::float64_t max_noise = 0.1;
 
   nvbench::criterion_params params;
@@ -59,7 +61,7 @@ void test_stdrel()
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
 
-  for (nvbench::float64_t measurement: generate(42.0, max_noise / 2, 10)) 
+  for (nvbench::float64_t measurement: generate(mean, max_noise / 2, size)) 
   {
     criterion.add_measurement(measurement);
   }
@@ -68,7 +70,7 @@ void test_stdrel()
   params.set_float64("max-noise", max_noise);
   criterion.initialize(params);
 
-  for (nvbench::float64_t measurement: generate(42.0, max_noise * 2, 10)) 
+  for (nvbench::float64_t measurement: generate(mean, max_noise * 2, size)) 
   {
     criterion.add_measurement(measurement);
   }
