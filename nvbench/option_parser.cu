@@ -516,8 +516,7 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->update_int64_prop(first[0], first[1]);
       first += 2;
     }
-    else if (arg == "--min-time" || arg == "--max-noise" || arg == "--skip-time" ||
-             arg == "--timeout")
+    else if (arg == "--skip-time" || arg == "--timeout")
     {
       check_params(1);
       this->update_float64_prop(first[0], first[1]);
@@ -1035,15 +1034,7 @@ try
 
   nvbench::float64_t value{};
   ::parse(prop_val, value);
-  if (prop_arg == "--min-time")
-  {
-    bench.set_min_time(value);
-  }
-  else if (prop_arg == "--max-noise")
-  { // Specified as percentage, stored as ratio:
-    bench.set_max_noise(value / 100.);
-  }
-  else if (prop_arg == "--skip-time")
+  if (prop_arg == "--skip-time")
   {
     bench.set_skip_time(value);
   }
