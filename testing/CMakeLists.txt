@@ -14,6 +14,7 @@ set(test_srcs
   runner.cu
   state.cu
   state_generator.cu
+  stdrel_criterion.cu
   string_axis.cu
   type_axis.cu
   type_list.cu
