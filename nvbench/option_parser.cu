@@ -993,6 +993,11 @@ try
   {
     nvbench::float64_t value{};
     ::parse(prop_val, value);
+
+    if (prop_arg == "--max-noise")
+    { // Specified as percentage, stored as ratio:
+      value /= 100.0;
+    }
     criterion_params.set_float64(name, value);
   }
   else if (type == nvbench::named_values::type::int64) 
