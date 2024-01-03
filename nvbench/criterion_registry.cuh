@@ -42,6 +42,8 @@ public:
 
   static bool register_criterion(std::string name,
                                  std::unique_ptr<nvbench::stopping_criterion> criterion);
+
+  static nvbench::stopping_criterion::params_description get_params_description();
 };
 
 } // namespace nvbench

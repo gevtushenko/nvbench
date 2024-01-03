@@ -37,6 +37,7 @@ public:
 
   void set_int64(std::string name, nvbench::int64_t value);
   void set_float64(std::string name, nvbench::float64_t value);
+  void set_string(std::string name, std::string value);
 
   [[nodiscard]] bool has_value(const std::string &name) const;
   [[nodiscard]] nvbench::int64_t get_int64(const std::string &name) const;

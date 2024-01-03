@@ -233,6 +233,7 @@ struct benchmark_base
   }
   /// @}
 
+  [[nodiscard]] nvbench::criterion_params& get_criterion_params() { return m_criterion_params; }
   [[nodiscard]] const nvbench::criterion_params& get_criterion_params() const { return m_criterion_params; }
 
   /// Control the stopping criterion for the measurement loop.

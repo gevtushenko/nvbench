@@ -53,4 +53,30 @@ bool criterion_registry::register_criterion(std::string name,
   return registry.m_map.emplace(std::move(name), std::move(criterion)).second;
 }
 
+nvbench::stopping_criterion::params_description criterion_registry::get_params_description()
+{
+  nvbench::stopping_criterion::params_description desc;
+
+  criterion_registry &registry = instance();
+  for (auto &[criterion_name, criterion] : registry.m_map)
+  {
+    for (auto param : criterion->get_params())
+    {
+      if (std::find_if(desc.begin(), desc.end(), [&](auto d) {
+            return d.first == param.first && d.second != param.second;
+          }) != desc.end())
+      {
+        NVBENCH_THROW(std::runtime_error,
+                      "Stopping criterion \"{}\" parameter \"{}\" is already used by another "
+                      "criterion with a different type.",
+                      criterion_name,
+                      param.first);
+      }
+      desc.push_back(param);
+    }
+  }
+
+  return desc;
+}
+
 } // namespace nvbench

@@ -34,11 +34,14 @@
 #include <nvbench/internal/cli_help.cuh>
 #include <nvbench/internal/cli_help_axis.cuh>
 
+#include "nvbench/axis_base.cuh"
+#include "nvbench/criterion_registry.cuh"
 #include <fmt/format.h>
 
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -376,6 +379,9 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     }
   };
 
+  const nvbench::stopping_criterion::params_description criterion_params =
+    nvbench::criterion_registry::get_params_description();
+
   while (first < last)
   {
     const auto &arg = *first;
@@ -518,8 +524,22 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       first += 2;
     }
     else
-    {
-      NVBENCH_THROW(std::runtime_error, "Unrecognized command-line argument: `{}`.", arg);
+    { // Try criterion params
+      std::string_view name(first[0].c_str() + 2, first[0].size() - 2);
+      auto it = std::find_if(criterion_params.begin(),
+                             criterion_params.end(),
+                             [&name](const auto &param) { return param.first == name; });
+
+      if (it != criterion_params.end())
+      {
+        check_params(1);
+        this->update_criterion_prop(first[0], first[1], it->second);
+        first += 2;
+      }
+      else
+      {
+        NVBENCH_THROW(std::runtime_error, "Unrecognized command-line argument: `{}`.", arg);
+      }
     }
   }
 }
@@ -945,6 +965,53 @@ try
   }
 }
 catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error handling option `{} {}`:\n{}",
+                prop_arg,
+                prop_val,
+                e.what());
+}
+
+void option_parser::update_criterion_prop(
+  const std::string &prop_arg,
+  const std::string &prop_val,
+  const nvbench::named_values::type type)
+try 
+{
+  // If no active benchmark, save args as global.
+  if (m_benchmarks.empty())
+  {
+    m_global_benchmark_args.push_back(prop_arg);
+    m_global_benchmark_args.push_back(prop_val);
+    return;
+  }
+
+  benchmark_base &bench = *m_benchmarks.back();
+  nvbench::criterion_params& criterion_params = bench.get_criterion_params();
+  std::string name(prop_arg.begin() + 2, prop_arg.end());
+  if (type == nvbench::named_values::type::float64) 
+  {
+    nvbench::float64_t value{};
+    ::parse(prop_val, value);
+    criterion_params.set_float64(name, value);
+  }
+  else if (type == nvbench::named_values::type::int64) 
+  {
+    nvbench::int64_t value{};
+    ::parse(prop_val, value);
+    criterion_params.set_int64(name, value);
+  }
+  else if (type == nvbench::named_values::type::string) 
+  {
+    criterion_params.set_string(name, prop_val);
+  }
+  else 
+  {
+    NVBENCH_THROW(std::runtime_error, "Unrecognized property: `{}`", prop_arg);
+  }
+}
+catch (std::exception& e)
 {
   NVBENCH_THROW(std::runtime_error,
                 "Error handling option `{} {}`:\n{}",

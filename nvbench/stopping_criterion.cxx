@@ -42,6 +42,16 @@ void criterion_params::set_float64(std::string name, nvbench::float64_t value)
   m_named_values.set_float64(name, value);
 }
 
+void criterion_params::set_string(std::string name, std::string value)
+{
+  if (m_named_values.has_value(name)) 
+  {
+    m_named_values.remove_value(name);
+  }
+
+  m_named_values.set_string(name, std::move(value));
+}
+
 bool criterion_params::has_value(const std::string &name) const
 {
   if (name == "max-noise" || name == "min-time")

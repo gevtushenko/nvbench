@@ -20,6 +20,7 @@
 
 #include <nvbench/device_info.cuh>
 #include <nvbench/printer_multiplex.cuh>
+#include <nvbench/stopping_criterion.cuh>
 
 #include <iosfwd>
 #include <memory>
@@ -111,6 +112,10 @@ private:
 
   void update_int64_prop(const std::string &prop_arg, const std::string &prop_val);
   void update_float64_prop(const std::string &prop_arg, const std::string &prop_val);
+
+  void update_criterion_prop(const std::string &prop_arg,
+                             const std::string &prop_val,
+                             const nvbench::named_values::type type);
 
   void update_used_device_state() const;
 
