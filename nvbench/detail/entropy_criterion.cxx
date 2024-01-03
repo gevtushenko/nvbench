@@ -32,14 +32,14 @@ void entropy_criterion::initialize(const criterion_params &params)
   m_entropy_tracker.clear();
   m_freq_tracker.clear();
 
-  if (params.has_value("max_angle"))
+  if (params.has_value("max-angle"))
   {
-    m_max_angle = params.get_float64("max_angle");
+    m_max_angle = params.get_float64("max-angle");
   }
 
-  if (params.has_value("min_r2"))
+  if (params.has_value("min-r2"))
   {
-    m_min_r2 = params.get_float64("min_r2");
+    m_min_r2 = params.get_float64("min-r2");
   }
 }
 
@@ -113,6 +113,15 @@ bool entropy_criterion::is_finished()
   const auto entropy_rel_stdev = entropy_stdev / mean_entropy;
 
   return entropy_rel_stdev < m_max_angle;
+}
+
+const entropy_criterion::params_description &entropy_criterion::get_params() const
+{
+  static const params_description desc{
+    {"max-angle", nvbench::named_values::type::float64},
+    {"min-r2", nvbench::named_values::type::float64},
+  };
+  return desc;
 }
 
 } // namespace nvbench::detail

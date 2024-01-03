@@ -184,8 +184,8 @@ void measure_cold_base::generate_summaries()
                                                                           mean_cuda_time);
   const auto cuda_rel_stdev = cuda_stdev / mean_cuda_time;
   const auto noise = cuda_rel_stdev;
-  const auto max_noise = m_criterion_params.get_float64("max_noise");
-  const auto min_time = m_criterion_params.get_float64("min_time");
+  const auto max_noise = m_criterion_params.get_float64("max-noise");
+  const auto min_time = m_criterion_params.get_float64("min-time");
 
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");

@@ -49,6 +49,9 @@ public:
   virtual void initialize(const criterion_params &params) = 0;
   virtual void add_measurement(nvbench::float64_t measurement) = 0;
   virtual bool is_finished() = 0;
+
+  using params_description = std::vector<std::pair<std::string, nvbench::named_values::type>>;
+  virtual const params_description &get_params() const = 0;
 };
 
 } // namespace nvbench

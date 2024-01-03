@@ -149,16 +149,16 @@ struct state
 
   // TODO Deprecate
   /// Accumulate at least this many seconds of timing data per measurement. @{
-  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_criterion_params.get_float64("min_time"); }
-  void set_min_time(nvbench::float64_t min_time) { m_criterion_params.set_float64("min_time", min_time); }
+  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_criterion_params.get_float64("min-time"); }
+  void set_min_time(nvbench::float64_t min_time) { m_criterion_params.set_float64("min-time", min_time); }
   /// @}
 
   // TODO Deprecate
   /// Specify the maximum amount of noise if a measurement supports noise.
   /// Noise is the relative standard deviation:
   /// `noise = stdev / mean_time`. @{
-  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_criterion_params.get_float64("max_noise"); }
-  void set_max_noise(nvbench::float64_t max_noise) { m_criterion_params.set_float64("max_noise", max_noise); }
+  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_criterion_params.get_float64("max-noise"); }
+  void set_max_noise(nvbench::float64_t max_noise) { m_criterion_params.set_float64("max-noise", max_noise); }
   /// @}
 
   /// If a warmup run finishes in less than `skip_time`, the measurement will

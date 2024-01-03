@@ -49,6 +49,15 @@ public:
   {
     return m_num_samples >= m_max_samples;
   }
+
+  // Describe criterion parameters in the `get_params()` method:
+  virtual const params_description &get_params() const override
+  {
+    static const params_description desc{
+      {"max-samples", nvbench::named_values::type::int64}
+    };
+    return desc;
+  }
 };
 
 // Register the criterion with NVBench:

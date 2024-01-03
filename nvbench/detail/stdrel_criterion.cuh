@@ -43,6 +43,7 @@ public:
   virtual void initialize(const criterion_params &params) override;
   virtual void add_measurement(nvbench::float64_t measurement) override;
   virtual bool is_finished() override;
+  virtual const params_description &get_params() const override;
 };
 
 } // namespace nvbench::detail

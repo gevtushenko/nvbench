@@ -28,14 +28,14 @@ void stdrel_criterion::initialize(const criterion_params &params)
   m_cuda_times.clear();
   m_noise_tracker.clear();
 
-  if (params.has_value("max_noise"))
+  if (params.has_value("max-noise"))
   {
-    m_max_noise = params.get_float64("max_noise");
+    m_max_noise = params.get_float64("max-noise");
   }
 
-  if (params.has_value("min_time"))
+  if (params.has_value("min-time"))
   {
-    m_min_time = params.get_float64("min_time");
+    m_min_time = params.get_float64("min-time");
   }
 }
 
@@ -97,6 +97,15 @@ bool stdrel_criterion::is_finished()
   }
 
   return false;
+}
+
+const stdrel_criterion::params_description &stdrel_criterion::get_params() const
+{
+  static const params_description desc{
+    {"max-noise", nvbench::named_values::type::float64},
+    {"min-time", nvbench::named_values::type::float64},
+  };
+  return desc;
 }
 
 } // namespace nvbench::detail

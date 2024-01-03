@@ -184,10 +184,10 @@ struct benchmark_base
 
   // TODO Deprecate
   /// Accumulate at least this many seconds of timing data per measurement. @{
-  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_criterion_params.get_float64("min_time"); }
+  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_criterion_params.get_float64("min-time"); }
   benchmark_base &set_min_time(nvbench::float64_t min_time)
   {
-    m_criterion_params.set_float64("min_time", min_time);
+    m_criterion_params.set_float64("min-time", min_time);
     return *this;
   }
   /// @}
@@ -196,10 +196,10 @@ struct benchmark_base
   /// Specify the maximum amount of noise if a measurement supports noise.
   /// Noise is the relative standard deviation:
   /// `noise = stdev / mean_time`. @{
-  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_criterion_params.get_float64("max_noise"); }
+  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_criterion_params.get_float64("max-noise"); }
   benchmark_base &set_max_noise(nvbench::float64_t max_noise)
   {
-    m_criterion_params.set_float64("max_noise", max_noise);
+    m_criterion_params.set_float64("max-noise", max_noise);
     return *this;
   }
   /// @}

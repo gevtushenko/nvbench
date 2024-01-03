@@ -44,7 +44,7 @@ void criterion_params::set_float64(std::string name, nvbench::float64_t value)
 
 bool criterion_params::has_value(const std::string &name) const
 {
-  if (name == "max_noise" || name == "min_time")
+  if (name == "max-noise" || name == "min-time")
   { // compat
     return true;
   }
@@ -60,11 +60,11 @@ nvbench::float64_t criterion_params::get_float64(const std::string &name) const
 {
   if (!m_named_values.has_value(name)) 
   {
-    if (name == "max_noise")
+    if (name == "max-noise")
     { // compat
       return compat_max_noise();
     }
-    else if (name == "min_time")
+    else if (name == "min-time")
     { // compat
       return compat_min_time();
     }
