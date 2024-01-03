@@ -39,7 +39,53 @@ void test_const()
   ASSERT(criterion.is_finished());
 }
 
+void produce_entropy_arch(nvbench::detail::entropy_criterion &criterion)
+{
+  /*
+   * This pattern is designed to simulate the entropy:
+   *
+   *   0.0, 1.0, 1.5, 2.0, 2.3, 2.5 <---- no unexpected measurement after this point
+   *   2.5, 2.4, 2.2, 2.1, 2.0, 1.9 <-+
+   *   1.8, 1.7, 1.6, 1.6, 1.5, 1.4   |
+   *   1.4, 1.3, 1.3, 1.3, 1.2, 1.2   |
+   *   1.1, 1.1, 1.1, 1.0, 1.0, 1.0   +-- entropy only decreases after 5-th sample, 
+   *   1.0, 0.9, 0.9, 0.9, 0.9, 0.9   |   so the slope should be negative
+   *   0.8, 0.8, 0.8, 0.8, 0.8, 0.8   |
+   *   0.7, 0.7, 0.7, 0.7, 0.7, 0.7 <-+
+   */
+  for (nvbench::float64_t x = 0.0; x < 50.0; x += 1.0)
+  {
+    criterion.add_measurement(x > 5.0 ? 5.0 : x);
+  }
+}
+
+void test_entropy_arch()
+{
+  nvbench::detail::entropy_criterion criterion;
+
+  // The R2 should be around 0.5
+  // The slope should be around -0.03
+  nvbench::criterion_params params;
+  params.set_float64("min-r2", 0.3);
+  params.set_float64("max-angle", 1.0);
+  criterion.initialize(params);
+  produce_entropy_arch(criterion);
+  ASSERT(criterion.is_finished());
+
+  params.set_float64("min-r2", 0.7);
+  criterion.initialize(params);
+  produce_entropy_arch(criterion);
+  ASSERT(!criterion.is_finished());
+
+  params.set_float64("min-r2", 0.3);
+  params.set_float64("max-angle", -1.0);
+  criterion.initialize(params);
+  produce_entropy_arch(criterion);
+  ASSERT(!criterion.is_finished());
+}
+
 int main()
 {
   test_const();
+  test_entropy_arch();
 }

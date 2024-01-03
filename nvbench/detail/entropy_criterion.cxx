@@ -137,7 +137,7 @@ void entropy_criterion::add_measurement(nvbench::float64_t measurement)
 
   {
     auto key = measurement;
-    constexpr bool bin_keys = true;
+    constexpr bool bin_keys = false;
 
     if (bin_keys) 
     {
