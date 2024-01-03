@@ -30,6 +30,9 @@ namespace nvbench
 constexpr nvbench::float64_t compat_min_time() { return 0.5; }    // 0.5 seconds
 constexpr nvbench::float64_t compat_max_noise() { return 0.005; } // 0.5% relative standard deviation
 
+/**
+ * Stores all the parameters for stopping criterion in use
+ */
 class criterion_params
 {
   nvbench::named_values m_named_values;
@@ -44,14 +47,34 @@ public:
   [[nodiscard]] nvbench::float64_t get_float64(const std::string &name) const;
 };
 
+/**
+ * Stopping criterion interface
+ */
 class stopping_criterion
 {
 public:
+  /**
+   * Initialize the criterion with the given parameters
+   *
+   * This method is called once per benchmark run, before any measurements are provided.
+   */
   virtual void initialize(const criterion_params &params) = 0;
+
+  /**
+   * Add the latest measurement to the criterion
+   */
   virtual void add_measurement(nvbench::float64_t measurement) = 0;
+
+  /**
+   * Check if the criterion has been met for all measurements processed by `add_measurement`
+   */
   virtual bool is_finished() = 0;
 
   using params_description = std::vector<std::pair<std::string, nvbench::named_values::type>>;
+
+  /**
+   * Return the parameter names and types for this criterion
+   */
   virtual const params_description &get_params() const = 0;
 };
 
