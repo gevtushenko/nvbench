@@ -25,7 +25,6 @@
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
-#include <nvbench/detail/ring_buffer.cuh>
 #include <nvbench/detail/throw.cuh>
 
 #include "nvbench/types.cuh"

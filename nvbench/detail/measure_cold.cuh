@@ -29,7 +29,6 @@
 
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #include <nvbench/detail/l2flush.cuh>
-#include <nvbench/detail/ring_buffer.cuh>
 #include <nvbench/detail/statistics.cuh>
 
 #include <cuda_runtime.h>
