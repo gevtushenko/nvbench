@@ -55,11 +55,7 @@ public:
    * @{
    */
   // clang-format off
-  [[nodiscard]] auto begin()        { return m_buffer.begin(); }
-  [[nodiscard]] auto begin() const  { return m_buffer.begin(); }
   [[nodiscard]] auto cbegin() const { return m_buffer.cbegin(); }
-  [[nodiscard]] auto end()        { return m_buffer.begin()  + static_cast<diff_t>(this->size()); }
-  [[nodiscard]] auto end() const  { return m_buffer.begin()  + static_cast<diff_t>(this->size()); }
   [[nodiscard]] auto cend() const { return m_buffer.cbegin() + static_cast<diff_t>(this->size()); }
   // clang-format on
   /** @} */
