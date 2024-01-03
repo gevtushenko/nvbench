@@ -114,9 +114,9 @@ bool entropy_criterion::is_finished()
   const auto [slope, intercept] = statistics::compute_linear_regression(begin, end);
   const auto r2                 = statistics::compute_r2(begin, end, slope, intercept);
 
-  // TODO slope to angle
+  const auto angle = statistics::slope2deg(slope);
 
-  if (slope > m_max_angle) 
+  if (angle > m_max_angle) 
   {
     return false;
   }

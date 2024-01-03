@@ -83,9 +83,29 @@ void test_r2()
   }
 }
 
+void test_slope_conversion()
+{
+  {
+    const nvbench::float64_t actual = statistics::slope2deg(0.0);
+    const nvbench::float64_t expected = 0.0;
+    ASSERT(std::abs(actual - expected) < 0.001);
+  }
+  {
+    const nvbench::float64_t actual = statistics::slope2deg(1.0);
+    const nvbench::float64_t expected = 45.0;
+    ASSERT(std::abs(actual - expected) < 0.001);
+  }
+  {
+    const nvbench::float64_t actual = statistics::slope2deg(5.0);
+    const nvbench::float64_t expected = 78.69;
+    ASSERT(std::abs(actual - expected) < 0.001);
+  }
+}
+
 int main()
 {
   test_std();
   test_lin_regression();
   test_r2();
+  test_slope_conversion();
 }

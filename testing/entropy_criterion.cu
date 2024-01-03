@@ -64,10 +64,10 @@ void test_entropy_arch()
   nvbench::detail::entropy_criterion criterion;
 
   // The R2 should be around 0.5
-  // The slope should be around -0.03
+  // The angle should be around -1.83
   nvbench::criterion_params params;
   params.set_float64("min-r2", 0.3);
-  params.set_float64("max-angle", 1.0);
+  params.set_float64("max-angle", -1.0);
   criterion.initialize(params);
   produce_entropy_arch(criterion);
   ASSERT(criterion.is_finished());
@@ -78,7 +78,7 @@ void test_entropy_arch()
   ASSERT(!criterion.is_finished());
 
   params.set_float64("min-r2", 0.3);
-  params.set_float64("max-angle", -1.0);
+  params.set_float64("max-angle", -2.0);
   criterion.initialize(params);
   produce_entropy_arch(criterion);
   ASSERT(!criterion.is_finished());

@@ -129,5 +129,19 @@ nvbench::float64_t compute_r2(It first, It last, nvbench::float64_t slope, nvben
   return 1.0 - ss_res / ss_tot;
 }
 
+inline nvbench::float64_t rad2deg(nvbench::float64_t rad)
+{
+  return rad * 180.0 / M_PI;
+}
+
+inline nvbench::float64_t slope2rad(nvbench::float64_t slope)
+{
+  return std::atan2(slope, 1.0);
+}
+
+inline nvbench::float64_t slope2deg(nvbench::float64_t slope)
+{
+  return rad2deg(slope2rad(slope));
+}
 
 } // namespace nvbench::detail::statistics
