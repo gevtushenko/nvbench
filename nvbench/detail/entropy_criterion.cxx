@@ -17,6 +17,7 @@
  */
 
 #include <nvbench/detail/entropy_criterion.cuh>
+#include <nvbench/types.cuh>
 
 #include <cmath>
 #include <numeric>
@@ -24,6 +25,68 @@
 
 namespace nvbench::detail
 {
+
+
+namespace 
+{
+
+template <class It>
+std::pair<nvbench::float64_t, nvbench::float64_t> compute_linear_regression(It first, It last)
+{
+  const std::size_t n = static_cast<std::size_t>(std::distance(first, last));
+
+  // Assuming x starts from 0
+  const nvbench::float64_t mean_x = (static_cast<nvbench::float64_t>(n) - 1.0) / 2.0;
+  const nvbench::float64_t mean_y = std::accumulate(first, last, 0.0) / static_cast<nvbench::float64_t>(n);
+
+  // Calculate the numerator and denominator for the slope
+  nvbench::float64_t numerator = 0.0;
+  nvbench::float64_t denominator = 0.0;
+
+  for (std::size_t i = 0; i < n; i++)
+  {
+    const nvbench::float64_t x_diff = static_cast<nvbench::float64_t>(i) - mean_x;
+    numerator += x_diff * (first[i] - mean_y);
+    denominator += x_diff * x_diff;
+  }
+
+  // Calculate the slope and intercept
+  const nvbench::float64_t slope = numerator / denominator;
+  const nvbench::float64_t intercept = mean_y - slope * mean_x;
+
+  return std::make_pair(slope, intercept);
+}
+
+
+template <class It>
+nvbench::float64_t compute_r2(It first, It last, nvbench::float64_t slope, nvbench::float64_t intercept)
+{
+  const std::size_t n = static_cast<std::size_t>(std::distance(first, last));
+
+  const nvbench::float64_t mean_y = std::accumulate(first, last, 0.0) / static_cast<nvbench::float64_t>(n);
+
+  nvbench::float64_t ss_tot = 0.0;
+  nvbench::float64_t ss_res = 0.0;
+
+  for (std::size_t i = 0; i < n; i++)
+  {
+    const nvbench::float64_t y = first[i];
+    const nvbench::float64_t y_pred = slope * static_cast<nvbench::float64_t>(i) + intercept;
+
+    ss_tot += (y - mean_y) * (y - mean_y);
+    ss_res += (y - y_pred) * (y - y_pred);
+  }
+
+  if (ss_tot == 0.0)
+  {
+    return 1.0;
+  }
+
+  return 1.0 - ss_res / ss_tot;
+}
+
+}
+
 
 void entropy_criterion::initialize(const criterion_params &params)
 {
@@ -41,6 +104,30 @@ void entropy_criterion::initialize(const criterion_params &params)
   {
     m_min_r2 = params.get_float64("min-r2");
   }
+}
+
+nvbench::float64_t entropy_criterion::compute_entropy() 
+{
+  const std::size_t n = m_freq_tracker.size();
+  if (n == 0)
+  {
+    return 0.0;
+  }
+
+  m_ps.resize(n);
+  for (std::size_t i = 0; i < n; i++)
+  {
+    m_ps[i] = static_cast<nvbench::float64_t>(m_freq_tracker[i].second) /
+              static_cast<nvbench::float64_t>(m_total_samples);
+  }
+
+  nvbench::float64_t entropy{};
+  for (nvbench::float64_t p : m_ps)
+  {
+    entropy -= p * std::log2(p);
+  }
+
+  return entropy;
 }
 
 void entropy_criterion::add_measurement(nvbench::float64_t measurement)
@@ -73,46 +160,31 @@ void entropy_criterion::add_measurement(nvbench::float64_t measurement)
       m_freq_tracker.insert(it, std::make_pair(key, nvbench::int64_t{1}));
     }
   }
-}
 
-nvbench::float64_t entropy_criterion::compute_entropy() 
-{
-  const std::size_t n = m_freq_tracker.size();
-  if (n == 0)
-  {
-    return 0.0;
-  }
-
-  m_ps.resize(n);
-  for (std::size_t i = 0; i < n; i++)
-  {
-    m_ps[i] = static_cast<nvbench::float64_t>(m_freq_tracker[i].second) /
-              static_cast<nvbench::float64_t>(m_total_samples);
-  }
-
-  nvbench::float64_t entropy{};
-  for (nvbench::float64_t p : m_ps)
-  {
-    entropy -= p * std::log2(p);
-  }
-
-  return entropy;
+  m_entropy_tracker.push_back(compute_entropy());
 }
 
 bool entropy_criterion::is_finished()
 {
-  m_entropy_tracker.push_back(compute_entropy());
+  if (m_entropy_tracker.size() < 2)
+  {
+    return false;
+  }
 
-  const auto mean_entropy =
-    std::accumulate(m_entropy_tracker.cbegin(), m_entropy_tracker.cend(), 0.) /
-    static_cast<nvbench::float64_t>(m_entropy_tracker.size());
-  const auto entropy_stdev =
-    nvbench::detail::statistics::standard_deviation(m_entropy_tracker.cbegin(),
-                                                    m_entropy_tracker.cend(),
-                                                    mean_entropy);
-  const auto entropy_rel_stdev = entropy_stdev / mean_entropy;
+  const auto [slope, intercept] = compute_linear_regression(m_entropy_tracker.cbegin(), m_entropy_tracker.cend());
+  const auto r2 = compute_r2(m_entropy_tracker.cbegin(), m_entropy_tracker.cend(), slope, intercept);
 
-  return entropy_rel_stdev < m_max_angle;
+  if (slope > m_max_angle) 
+  {
+    return false;
+  }
+
+  if (r2 < m_min_r2)
+  {
+    return false;
+  }
+
+  return true;
 }
 
 const entropy_criterion::params_description &entropy_criterion::get_params() const
