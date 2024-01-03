@@ -57,14 +57,25 @@ ValueType standard_deviation(Iter first, Iter last, ValueType mean)
                                                             val *= val;
                                                             return val;
                                                           }) /
-                        static_cast<ValueType>((num - 1));
+                        static_cast<ValueType>((num - 1)); // Bessel’s correction
   return std::sqrt(variance);
 }
 
+/**
+ * Computes linear regression and returns the slope and intercept
+ *
+ * If the input has fewer than 2 samples, infinity is returned for both slope and intercept.
+ */
 template <class It>
 std::pair<nvbench::float64_t, nvbench::float64_t> compute_linear_regression(It first, It last)
 {
   const std::size_t n = static_cast<std::size_t>(std::distance(first, last));
+
+  if (n < 2)
+  {
+    return std::make_pair(std::numeric_limits<nvbench::float64_t>::infinity(),
+                          std::numeric_limits<nvbench::float64_t>::infinity());
+  }
 
   // Assuming x starts from 0
   const nvbench::float64_t mean_x = (static_cast<nvbench::float64_t>(n) - 1.0) / 2.0;
@@ -88,7 +99,9 @@ std::pair<nvbench::float64_t, nvbench::float64_t> compute_linear_regression(It f
   return std::make_pair(slope, intercept);
 }
 
-
+/**
+ * Computes and returns the R^2 (coefficient of determination)
+ */ 
 template <class It>
 nvbench::float64_t compute_r2(It first, It last, nvbench::float64_t slope, nvbench::float64_t intercept)
 {

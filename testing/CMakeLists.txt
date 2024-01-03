@@ -14,6 +14,7 @@ set(test_srcs
   ring_buffer.cu
   runner.cu
   state.cu
+  statistics.cu
   state_generator.cu
   stdrel_criterion.cu
   string_axis.cu
