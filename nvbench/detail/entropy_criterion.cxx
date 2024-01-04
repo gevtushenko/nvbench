@@ -116,6 +116,12 @@ bool entropy_criterion::is_finished()
     return false;
   }
 
+  // About 20% faster than the stdrel method
+  if (m_total_samples % 2 != 0)
+  {
+    return false;
+  }
+
   auto begin = m_entropy_tracker.cbegin();
   auto end = m_entropy_tracker.cend();
 
