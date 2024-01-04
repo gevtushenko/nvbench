@@ -120,15 +120,13 @@ bool entropy_criterion::is_finished()
   auto end = m_entropy_tracker.cend();
 
   const auto [slope, intercept] = statistics::compute_linear_regression(begin, end);
-  const auto r2                 = statistics::compute_r2(begin, end, slope, intercept);
 
-  const auto angle = statistics::slope2deg(slope);
-
-  if (angle > m_max_angle) 
+  if (statistics::slope2deg(slope) > m_max_angle) 
   {
     return false;
   }
 
+  const auto r2 = statistics::compute_r2(begin, end, slope, intercept);
   if (r2 < m_min_r2)
   {
     return false;
