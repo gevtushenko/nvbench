@@ -25,6 +25,12 @@
 namespace nvbench::detail
 {
 
+entropy_criterion::entropy_criterion()
+{
+  m_freq_tracker.reserve(m_entropy_tracker.capacity() * 2);
+  m_ps.reserve(m_entropy_tracker.capacity() * 2);
+}
+
 void entropy_criterion::initialize(const criterion_params &params)
 {
   m_total_samples = 0;
@@ -84,6 +90,8 @@ void entropy_criterion::add_measurement(nvbench::float64_t measurement)
       key = std::round(key / epsilon) * epsilon;
     }
 
+    // This approach is about 3x faster than `std::{unordered_,}map`
+    // Up to 100k samples, only about 20% slower than corresponding stdrel method
     auto it = std::lower_bound(m_freq_tracker.begin(),
                                m_freq_tracker.end(),
                                std::make_pair(key, nvbench::int64_t{}));

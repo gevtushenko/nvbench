@@ -17,6 +17,7 @@ set(test_srcs
   statistics.cu
   state_generator.cu
   stdrel_criterion.cu
+  criterion_bench.cu
   string_axis.cu
   type_axis.cu
   type_list.cu
