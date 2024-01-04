@@ -36,7 +36,8 @@ InitValueT transform_reduce(InIterT first,
 {
   while (first != last)
   {
-    init = reduceOp(std::move(init), transformOp(*first++));
+    init = reduceOp(std::move(init), transformOp(*first));
+    ++first;
   }
   return init;
 }

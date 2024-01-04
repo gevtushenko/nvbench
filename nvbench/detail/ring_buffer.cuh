@@ -22,6 +22,7 @@
 
 #include <nvbench/detail/statistics.cuh>
 
+#include <iterator>
 #include <cassert>
 #include <vector>
 
@@ -42,7 +43,41 @@ private:
   std::size_t m_index{0};
   bool m_full{false};
 
+  std::size_t get_front_index() const 
+  {
+    return m_full ? m_index : 0;
+  }
+
 public:
+  struct iterator
+  {
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = T;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const T*;
+    using reference = const T&;
+
+    iterator(std::size_t index, std::size_t capacity, pointer ptr)
+        : m_index{index}
+        , m_capacity{capacity}
+        , m_ptr{ptr}
+    {}
+
+    iterator operator++()
+    {
+      ++m_index;
+      return *this;
+    }
+    reference operator*() { return m_ptr[m_index % m_capacity]; }
+    bool operator==(const iterator &other) const { return m_ptr == other.m_ptr && m_index == other.m_index; }
+    bool operator!=(const iterator &other) const { return !(*this == other); }
+
+  private:
+    std::size_t m_index;
+    std::size_t m_capacity;
+    pointer m_ptr;
+  };
+
   /**
    * Create a new ring buffer with the requested capacity.
    */
@@ -51,12 +86,12 @@ public:
   {}
 
   /**
-   * Iterators provide all values in the ring buffer in unspecified order.
+   * Iterators provide all values in the ring buffer in FIFO order.
    * @{
    */
   // clang-format off
-  [[nodiscard]] auto cbegin() const { return m_buffer.cbegin(); }
-  [[nodiscard]] auto cend() const { return m_buffer.cbegin() + static_cast<diff_t>(this->size()); }
+  [[nodiscard]] iterator cbegin() const { return iterator{get_front_index(), capacity(), m_buffer.data()}; }
+  [[nodiscard]] iterator cend() const { return iterator{get_front_index() + size(), capacity(), m_buffer.data()}; }
   // clang-format on
   /** @} */
 

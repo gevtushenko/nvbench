@@ -42,7 +42,8 @@ ValueType standard_deviation(Iter first, Iter last, ValueType mean)
 {
   static_assert(std::is_floating_point_v<ValueType>);
 
-  const auto num = last - first;
+  const auto num = std::distance(first, last);
+
   if (num < 5) // don't bother with low sample sizes.
   {
     return std::numeric_limits<ValueType>::infinity();
@@ -112,9 +113,9 @@ nvbench::float64_t compute_r2(It first, It last, nvbench::float64_t slope, nvben
   nvbench::float64_t ss_tot = 0.0;
   nvbench::float64_t ss_res = 0.0;
 
-  for (std::size_t i = 0; i < n; i++)
+  for (std::size_t i = 0; i < n; ++i, ++first)
   {
-    const nvbench::float64_t y = first[i];
+    const nvbench::float64_t y = *first;
     const nvbench::float64_t y_pred = slope * static_cast<nvbench::float64_t>(i) + intercept;
 
     ss_tot += (y - mean_y) * (y - mean_y);

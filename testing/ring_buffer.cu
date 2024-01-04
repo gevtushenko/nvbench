@@ -62,12 +62,12 @@ try
   ASSERT(avg.size() == 3);
   ASSERT(avg.capacity() == 3);
   ASSERT_MSG(avg.back() == 5, " (got {})", avg.back());
-  ASSERT(equal(avg, {5, 2, -15}));
+  ASSERT(equal(avg, {2, -15, 5}));
 
   avg.push_back(0);
   ASSERT(avg.size() == 3);
   ASSERT(avg.capacity() == 3);
-  ASSERT(equal(avg, {5, 0, -15}));
+  ASSERT(equal(avg, {-15, 5, 0}));
   ASSERT_MSG(avg.back() == 0, " (got {})", avg.back());
 
   avg.push_back(128);
