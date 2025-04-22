@@ -81,6 +81,7 @@ void measure_cold_base::initialize()
   m_total_samples             = 0;
   m_max_time_exceeded         = false;
 
+  m_sm_clock_rates.clear();
   m_cuda_times.clear();
   m_cpu_times.clear();
 
@@ -123,6 +124,7 @@ void measure_cold_base::record_measurements()
       return;
     }
 
+    m_sm_clock_rates.push_back(current_clock_rate);
     m_sm_clock_rate_accumulator += current_clock_rate;
   }
 
@@ -417,6 +419,7 @@ void measure_cold_base::generate_summaries()
                             m_total_samples));
 
     printer.process_bulk_data(m_state, "nv/cold/sample_times", "sample_times", m_cuda_times);
+    printer.process_bulk_data(m_state, "nv/cold/sample_freqs", "sample_freqs", m_sm_clock_rates);
   }
 }
 
