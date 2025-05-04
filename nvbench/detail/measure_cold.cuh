@@ -152,14 +152,14 @@ struct measure_cold_base::kernel_launch_timer
   __forceinline__ void stop()
   {
     m_measure.m_cuda_timer.stop(m_measure.m_launch.get_stream());
+    if (!m_measure.m_run_once)
+    {
+      m_measure.gpu_frequency_stop();
+    }
     if (!m_disable_blocking_kernel)
     {
       m_measure.m_cpu_timer.start();
       m_measure.unblock_stream();
-    }
-    if (!m_measure.m_run_once)
-    {
-      m_measure.gpu_frequency_stop();
     }
     m_measure.sync_stream();
     m_measure.m_cpu_timer.stop();
