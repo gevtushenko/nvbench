@@ -18,6 +18,7 @@
 
 #include <nvbench/detail/entropy_criterion.cuh>
 #include <nvbench/types.cuh>
+#include <iostream>
 
 #include <cmath>
 
@@ -101,11 +102,6 @@ void entropy_criterion::do_add_measurement(nvbench::float64_t measurement)
 
 bool entropy_criterion::do_is_finished()
 {
-  if (m_entropy_tracker.size() < 2)
-  {
-    return false;
-  }
-
   // Even number of samples is used to reduce the overhead and not required to compute entropy.
   // This makes `is_finished()` about 20% faster than corresponding stdrel method.
   if (m_total_samples % 2 != 0)
@@ -118,13 +114,15 @@ bool entropy_criterion::do_is_finished()
   auto mean  = statistics::compute_mean(begin, end);
 
   const auto [slope, intercept] = statistics::compute_linear_regression(begin, end, mean);
+  const auto r2 = statistics::compute_r2(begin, end, mean, slope, intercept);
+
+  std::cout << m_entropy_tracker.back() << "," << r2 << "," << slope << "," << intercept << std::endl;
 
   if (statistics::slope2deg(slope) > m_params.get_float64("max-angle"))
   {
     return false;
   }
 
-  const auto r2 = statistics::compute_r2(begin, end, mean, slope, intercept);
   if (r2 < m_params.get_float64("min-r2"))
   {
     return false;
